@@ -1,0 +1,229 @@
+`==.mixed_labelled` <- function(e1, e2) {
+    e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_equal(e1, e2)
+}
+
+`!=.mixed_labelled` <- function(e1, e2) {
+    e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    !vec_equal(e1, e2)
+}
+
+`unique.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
+    vec_unique(unmix(x))
+}
+
+`duplicated.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
+    x <- unmix(x)
+    vec_duplicate_id(x) != seq_along(x)
+}
+
+`anyDuplicated.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
+    vec_duplicate_any(unmix(x))
+}
+
+`<=.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_compare(e1, e2) <= 0
+}
+
+`<.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_compare(e1, e2) < 0
+}
+
+`>=.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_compare(e1, e2) >= 0
+}
+
+`>.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_compare(e1, e2) > 0
+}
+
+`+.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    if (missing(e2)) {
+        vec_arith("+", e1, MISSING())
+    } else {
+        vec_arith("+", e1, e2)
+    }
+}
+
+`-.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    if (missing(e2)) {
+        vec_arith("-", e1, MISSING())
+    } else {
+        vec_arith("-", e1, e2)
+    }
+}
+
+`*.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_arith("*", e1, e2)
+}
+
+`/.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_arith("/", e1, e2)
+}
+
+`^.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_arith("^", e1, e2)
+}
+
+`%%.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_arith("%%", e1, e2)
+}
+
+`%/%.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_arith("%/%", e1, e2)
+}
+
+`!.mixed_labelled` <- function(x) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_arith("!", x, MISSING())
+}
+
+`&.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_arith("&", e1, e2)
+}
+
+`|.mixed_labelled` <- function(e1, e2) {
+    if (is_mixed(e1)) e1 <- unmix(e1)
+    if (is_mixed(e2)) e2 <- unmix(e2)
+    vec_arith("|", e1, e2)
+}
+
+`[<-.mixed_labelled` <- function(x, i, value) {
+    tv <- attr(x, "tagged_values", exact = TRUE)
+    wel <- which(is.element(value, tv))
+    if (length(wel) > 0) {
+        value[wel] <- tagged_na(names(tv)[is.element(tv, value[wel])])
+    }
+    NextMethod()
+}
+
+`c.mixed_labelled` <- function(..., recursive = FALSE, use.names = TRUE) {
+    cargs <- list(...)
+
+    checks <- lapply(cargs, function(x) {
+        if (!is_mixed(x) && is.double(x)) {
+            if (any(is_tagged_na(x))) {
+                cat("\n")
+                stop(simpleError("Declared and tagged missing values should not be mixed.\n\n"))
+            }
+        }
+    })
+
+    na_values <- sort(unique(unlist(lapply(cargs, function(x) attr(x, "na_values", exact = TRUE)))))
+    
+    labels <- unlist(lapply(cargs, function(x) attr(x, "labels", exact = TRUE)))
+    duplicates <- duplicated(labels)
+
+    if (length(wduplicates <- which(duplicates)) > 0) {
+        for (i in seq(length(wduplicates))) {
+            if (length(unique(names(labels[labels == labels[wduplicates[i]]]))) > 1) {
+                cat("\n")
+                stop(simpleError("Labels must be unique.\n\n"))
+            }
+        }
+    }
+
+    labels <- sort(labels[!duplicates])
+
+    na_range <- lapply(cargs, function(x) attr(x, "na_range", exact = TRUE))
+    nulls <- unlist(lapply(na_range, is.null))
+    
+    if (all(nulls)) {
+        na_range <- NULL
+    }
+    else {
+        if (sum(nulls) == length(na_range) - 1) {
+            na_range <- unlist(na_range)
+        }
+        else {
+            compatible <- logical(length(na_range))
+            if (!is.null(na_range)) {
+                for (i in seq(1, length(na_range) - 1)) {
+                    nai <- na_range[[i]]
+                    if (is.null(nai)) {
+                        compatible[i] <- TRUE
+                    }
+                    else {
+                        for (j in seq(2, length(na_range))) {
+                            naj <- na_range[[j]]
+                            if (is.null(naj)) {
+                                compatible[j] <- TRUE
+                            }
+                            else {
+                                if (any(is.element(seq(nai[1], nai[2]), seq(naj[1], naj[2]))) > 0) {
+                                    compatible[i] <- TRUE
+                                    compatible[j] <- TRUE
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (any(!compatible)) {
+                cat("\n")
+                stop(simpleError("Incompatible NA ranges.\n\n"))
+            }
+
+            na_range <- range(unlist(na_range))
+        }
+    }
+
+    cargs <- unlist(lapply(cargs, function(x) {
+        if (is_mixed(x)) x <- unmix(x)
+        attributes(x) <- NULL
+        return(x)
+    }))
+
+    label <- attr(cargs[[1]], "label", exact = TRUE)
+
+    new_mixed_labelled(
+        vec_data(cargs),
+        labels = labels,
+        na_values = na_values,
+        na_range = na_range,
+        label = label
+    )
+}
+
+`as_factor.mixed_labelled` <- function(x, ..., only_labelled = TRUE) {
+    oa <- list(...)
+    if (is.element("unmix", names(oa)) && is.logical(oa$unmix)) {
+        if (oa$unmix[1]) { # to prevent an accidental logical vector
+            x <- unmix(x)
+        }
+    }
+    else {
+        # unmix by default
+        x <- unmix(x)
+    }
+    
+    NextMethod()
+}

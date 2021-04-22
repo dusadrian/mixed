@@ -1,0 +1,31 @@
+Version 0.6
+  o new function fretable() to make a frequency table
+  o new function using() as a more flexible alternative to with()
+
+Version 0.5
+  o new function fmode() to calculate the mode of a variable
+  o new function histc() to fraw a histogram with an added distribution
+    density curve
+
+Version 0.4
+  o t.testAB() and anovaFK() invisibly return a list of test results
+  o argument "new" from function dbinoms() is now FALSE by default
+  o modified function hclr(), argument "h" did not return an error if the
+    value is outside the interval 0 - 360
+
+Version 0.3
+  o new argument "zoom" for function dbinoms(); if TRUE, the drawing only zooms
+    on the values with a positive probability
+  o new function hclr() pentru a genera culori din gama HCL (Hue Chroma Luminance)
+  o function t.testAB() now also accepts a formula in the first argument
+  o new function anovaFK() using the Fligner-Killeen test to verify the
+    homogeneity of variance assumption
+
+Version 0.2
+  o new function dfcalc() to calculate degrees of freedom
+  o new function t.testAB() using the Ansari-Bradley test to verify the
+    homogeneity of variance assumption
+  o new function spooled() to calculate the pooled variance
+
+Version 0.1
+  o initial version

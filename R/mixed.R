@@ -1,0 +1,315 @@
+
+`is_mixed` <- function(x) {
+    inherits(x, "mixed_labelled")
+}
+
+`values_to_tag` <- function(x) {
+    na_values <- attr(x, "na_values")
+    na_range <- attr(x, "na_range")
+    misvals <- c()
+
+    if (is.null(na_values) & is.null(na_range)) {
+        return(misvals)
+    }
+
+
+    if (!is.null(na_values)) {
+        misvals <- sort(na_values)
+    }
+
+    if (!is.null(na_range)) {
+        uniques <- sort(unique(x[x >= na_range[1] & x <= na_range[2]]))
+        if (length(uniques) == 0) {
+            uniques <- na_range
+        }
+        else {
+            uniques <- sort(unique(c(uniques, na_range)))
+        }
+
+        uniques <- setdiff(uniques, na_values)
+        misvals <- sort(unique(c(misvals, uniques)))
+    }
+
+    if (length(misvals) > length(letters)) {
+        cat("\n")
+        stop(simpleError("Too large span of missing values.\n\n"))
+    }
+
+    names(misvals) <- letters[seq(length(misvals))]
+    return(misvals)
+}
+
+`as_mixed` <- function(x, ...) {
+    UseMethod("as_mixed")
+}
+
+`as_mixed.default` <- function(x, ...) {
+    cat("\n")
+    stop(simpleError("Only labelled vectors can be converted to mixed labelled.\n\n"))
+}
+
+`as_mixed.haven_labelled` <- function(x, ...) {
+    if (is_mixed(x)) {
+        return(x)
+    }
+
+    class(x) <- setdiff(class(x), "haven_labelled_spss")
+    
+    tagged <- logical(length(x))
+    if (is.double(x)) {
+        tagged <- is_tagged_na(x)
+    }
+    
+    if (sum(tagged) > 0) {
+        cat("\n")
+        stop(simpleError("Declared and tagged missing values should not be mixed.\n\n"))
+    }
+
+    tagged_values <- values_to_tag(x)
+    
+    if (length(tagged_values) > 0) {
+        nms <- names(tagged_values)
+        x[is.element(x, tagged_values)] <- tagged_na(names(tagged_values)[match(x[is.element(x, tagged_values)], tagged_values)])
+        attr(x, "tagged_values") <- tagged_values
+        class(x) <- c("mixed_labelled", class(x))
+    }
+
+    return(x)
+}
+
+`as_mixed.data.frame` <- function(x, ..., only_labelled = TRUE) {
+    if (only_labelled) {
+        labelled <- vapply(x, is.labelled, logical(1))
+        x[labelled] <- lapply(x[labelled], as_mixed, ...)
+    } else {
+        x[] <- lapply(x, as_mixed)
+    }
+
+    return(x)
+}
+
+`unmix` <- function(x) {
+    attrx <- attributes(x)
+    if (!inherits(x, "mixed_labelled")) {
+        cat("\n")
+        stop("Only a mixed labelled object can be unmixed.\n\n", call. = FALSE)
+    }
+
+    attributes(x) <- NULL
+
+    tagged <- logical(length(x))
+    if (is.double(x)) {
+        tagged <- is_tagged_na(x)
+    }
+
+    tagged_values <- attrx[["tagged_values"]]
+
+    if (!is.null(tagged_values) && any(tagged)) {
+        nms <- names(tagged_values)
+        tags <- na_tag(x[tagged])
+        x[which(tagged)[is.element(tags, nms)]] <- unname(tagged_values[match(tags[is.element(tags, nms)], nms)])
+    }
+
+    tagged <- logical(length(x))
+    if (is.double(x)) {
+        tagged <- is_tagged_na(x)
+    }
+
+    if (sum(tagged) > 0) {
+        cat("\n")
+        stop("There should not be undeclared missing values into a mixed labelled object.\n\n", call. = FALSE)
+    }
+
+    attrx$tagged_values <- NULL
+    attrx$class <- c("haven_labelled_spss", setdiff(attrx$class, "mixed_labelled"))
+    attributes(x) <- attrx
+    return(x)
+}
+
+`validate_labelled` <- function(x) {
+    labels <- attr(x, "labels")
+    if (is.null(labels)) {
+        return(x)
+    }
+
+    if (is.null(names(labels))) {
+        stop(simpleError("`labels` must have names."))
+    }
+    if (any(duplicated(stats::na.omit(labels)))) {
+        stop(simpleError("`labels` must be unique."))
+    }
+
+    x
+}
+
+`new_labelled` <- function(x = double(), labels = NULL, label = NULL,
+                         ..., class = character()) {
+    if (!is.numeric(x) && !is.character(x)) {
+        cat("\n")
+        stop(simpleError("`x` must be a numeric or a character vector.\n\n"))
+    }
+
+    if (mode(x) == mode(labels)) {
+        if (typeof(x) != typeof(labels)) {
+            mode(labels) <- typeof(x)
+        }
+    }
+    
+    if (!is.null(labels) && !vec_is(labels, x)) {
+        cat("\n")
+        stop(simpleError("`labels` must be same type as `x`.\n\n"))
+    }
+
+    if (!is.null(label) && (!is.character(label) || length(label) != 1)) {
+        cat("\n")
+        stop(simpleError("`label` must be a character vector of length one.\n\n"))
+    }
+    
+    new_vctr(x,
+        labels = labels,
+        label = label,
+        ...,
+        class = c(class, "haven_labelled"),
+        inherit_base_type = TRUE
+    )
+}
+
+`mixed_labelled` <- function(x = double(), labels = NULL, na_values = NULL,
+                          na_range = NULL, label = NULL) {
+
+    x <- vec_data(x)
+    xlabels <- attr(x, "labels", exact = TRUE)
+    if (is.null(labels) & !is.null(xlabels)) {
+        labels <- xlabels
+    }
+
+    xlabel <- attr(x, "label", exact = TRUE)
+    if (is.null(label) & !is.null(xlabel)) {
+        label <- xlabel
+    }
+
+    # # na_values <- vec_cast_named(na_values, x, x_arg = "na_values", to_arg = "x")
+    # na_values <- stats::setNames(vec_cast(na_values, x, x_arg = "na_values", to_arg = "x"), names(na_values))
+    
+    labelled <- labelled(x, labels = labels, label = label)
+
+    new_mixed_labelled(
+        vec_data(labelled),
+        labels = attr(labelled, "labels", exact = TRUE),
+        na_values = na_values,
+        na_range = na_range,
+        label = attr(labelled, "label", exact = TRUE)
+    )
+}
+
+`new_mixed_labelled` <- function(x, labels, na_values, na_range, label) {
+    declared <- logical(length(x))
+    
+    if (!is.null(na_values)) {
+        declared <- is.element(x, na_values)
+        if (any(is.na(na_values))) {
+            cat("\n")
+            stop(simpleError("`na_values` can not contain missing values.\n\n"))
+        }
+    }
+    
+    if (any(is_tagged_na(x))) {
+        cat("\n")
+        stop(simpleError("Cannot mix declared and tagged missing values.\n\n"))
+    }
+
+    if (!is.null(na_range)) {
+        type_ok <- (is.character(x) && is.character(na_range)) || (is.numeric(x) && is.numeric(na_range))
+        
+        if (!type_ok || length(na_range) != 2) {
+            cat("\n")
+            stop(simpleError("`na_range` must be a vector of length two the same type as `x`.\n\n"))
+        }
+        
+        if (any(is.na(na_range))) {
+            cat("\n")
+            stop(simpleError("`na_range` can not contain missing values.\n\n"))
+        }
+        
+        if (na_range[1] >= na_range[2]) {
+            cat("\n")
+            stop(simpleError("`na_range` must be in ascending order.\n\n"))
+        }
+
+        declared <- declared | (x >= na_range[1] & x <= na_range[2])
+    }
+
+    
+    tagged_values <- sort(unique(x[declared]))
+    
+    if (length(tagged_values) > length(letters)) {
+        cat("\n")
+        stop(simpleError("Too many declared missing values.\n\n"))
+    }
+
+    for (i in seq(length(tagged_values))) {
+        x[x == tagged_values[i]] <- tagged_na(letters[i])
+    }
+    
+    if (length(tagged_values) > 0) {
+        names(tagged_values) <- letters[seq(length(tagged_values))]
+    }
+    
+    new_labelled(x,
+        labels = labels,
+        label = label,
+        tagged_values = tagged_values,
+        na_values = na_values,
+        na_range = na_range,
+        class = "mixed_labelled"
+    )
+}
+
+`get_labeltext` <- function(x, prefix=": ") {
+    label = attr(x, "label", exact = TRUE)
+    if(!is.null(label)) {
+        paste0(prefix, label)
+    }
+}
+
+`vec_ptype_full.mixed_labelled` <- function(x, ...) {
+    paste0("mixed_labelled<", vec_ptype_full(vec_data(x)), ">")
+}
+
+`obj_print_header.mixed_labelled` <- function(x, ...) {
+    cat(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
+    invisible(x)
+}
+
+`obj_print_footer.mixed_labelled` <- function(x, ...) {
+    na_values <- attr(x, "na_values")
+    if (!is.null(na_values)) {
+        cat(paste0("Missing values: ", paste(na_values, collapse = ", "), "\n"))
+    }
+
+    na_range <- attr(x, "na_range")
+    if (!is.null(na_range)) {
+        cat(paste0("Missing range: [", paste(na_range, collapse = ", "), "]\n"))
+    }
+
+    print_labels(x)
+}
+
+`obj_print_data.mixed_labelled` <- function(x, ...) {
+    if (length(x) == 0) {
+        return(invisible(x))
+    }
+    
+    x <- unmix(x)
+    out <- stats::setNames(format(x), names(x))
+    print(out, quote = FALSE)
+
+    invisible(x)
+}
+
+`format.mixed_labelled` <- function(x, ..., digits = getOption("digits")) {
+    format(vec_data(unmix(x)), ...)
+}
+
+
+#----------------------------------------------
