@@ -89,12 +89,16 @@
 }
 
 `unmix` <- function(x) {
-    attrx <- attributes(x)
-    if (!inherits(x, "mixed_labelled")) {
-        cat("\n")
-        stop("Only a mixed labelled object can be unmixed.\n\n", call. = FALSE)
-    }
+    UseMethod("unmix")
+}
 
+`unmix.default` <- function(x) {
+    # Do nothing
+    return(x)
+}
+
+`unmix.mixed_labelled` <- function(x) {
+    attrx <- attributes(x)
     attributes(x) <- NULL
 
     tagged <- logical(length(x))
@@ -123,6 +127,11 @@
     attrx$tagged_values <- NULL
     attrx$class <- c("haven_labelled_spss", setdiff(attrx$class, "mixed_labelled"))
     attributes(x) <- attrx
+    return(x)
+}
+
+`unmix.data.frame` <- function(x) {
+    x[] <- lapply(x, unmix)
     return(x)
 }
 
@@ -155,9 +164,13 @@
         }
     }
     
-    if (!is.null(labels) && !vec_is(labels, x)) {
-        cat("\n")
-        stop(simpleError("`labels` must be same type as `x`.\n\n"))
+    if (!is.null(labels)) {
+        lbls <- labels
+        class(lbls) <- setdiff(class(lbls), c("haven_labelled", "vctrs_vctr", "noprint_header"))
+        if (!vec_is(lbls, x)) {
+            cat("\n")
+            stop(simpleError("`labels` must be same type as `x`.\n\n"))
+        }
     }
 
     if (!is.null(label) && (!is.character(label) || length(label) != 1)) {
@@ -218,7 +231,7 @@
         stop(simpleError("Cannot mix declared and tagged missing values.\n\n"))
     }
 
-    if (!is.null(na_range)) {
+    if (!is.null(na_range) && is.numeric(x)) {
         type_ok <- (is.character(x) && is.character(na_range)) || (is.numeric(x) && is.numeric(na_range))
         
         if (!type_ok || length(na_range) != 2) {
@@ -239,6 +252,10 @@
         declared <- declared | (x >= na_range[1] & x <= na_range[2])
     }
 
+    if (sum(declared) > 0 && !is.numeric(x)) {
+        cat("\n")
+        stop(simpleError("Missing values can be declared only for numeric variables.\n\n"))
+    }
     
     tagged_values <- sort(unique(x[declared]))
     
@@ -246,9 +263,18 @@
         cat("\n")
         stop(simpleError("Too many declared missing values.\n\n"))
     }
-
+    
     for (i in seq(length(tagged_values))) {
         x[x == tagged_values[i]] <- tagged_na(letters[i])
+    }
+
+    if (!is.null(labels)) {
+        for (i in seq(length(tagged_values))) {
+            labels[labels == tagged_values[i]] <- tagged_na(letters[i])
+        }
+        # add these classes to allow printing tagged NA values when asking:
+        # attr(x, "labels")
+        class(labels) <- c("haven_labelled", "vctrs_vctr", "noprint_header", class(labels))
     }
     
     if (length(tagged_values) > 0) {
@@ -292,7 +318,18 @@
         cat(paste0("Missing range: [", paste(na_range, collapse = ", "), "]\n"))
     }
 
-    print_labels(x)
+    labels <- attr(x, "labels", exact = TRUE)
+    if (!is.null(labels)) {
+        tagged <- haven::is_tagged_na(labels)
+        if (any(tagged)) {
+            natags <- haven::na_tag(labels)
+            tagged_values <- attr(x, "tagged_values", exact = TRUE)
+            labels[tagged] <- tagged_values[match(natags[tagged], names(tagged_values))]
+            attr(x, "labels") <- labels
+        }
+    }
+
+    haven::print_labels(x)
 }
 
 `obj_print_data.mixed_labelled` <- function(x, ...) {

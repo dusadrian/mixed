@@ -39,6 +39,16 @@
             format(out, justify = "right")
         }
 
+        do.call("unlockBinding", list(sym = "obj_print_header.haven_labelled", env = env))
+
+        env$obj_print_header.haven_labelled <- function(x, ...) {
+            if (!inherits(x, "noprint_header")) {
+                do.call("cat", list(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n")))
+                # cat(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
+            }
+            invisible(x)
+        }
+
         env <- as.environment("package:haven")
         do.call("unlockBinding", list(sym = "labelled", env = env))
 
@@ -61,6 +71,17 @@
                 validate_labelled(new_labelled(x, labels = labels, label = label))
             }
         }
+
+        # # this is necessary, to convert mixed_labelled objects back into labelled_spss
+        # do.call("unlockBinding", list(sym = "write_sav", env = env))
+
+        # env$write_sav <- function(data, path, compress = FALSE) {
+        #     data <- validate_sav(unmix(data))
+        #     write_sav_(data, normalizePath(path, mustWork = FALSE), compress = compress)
+        #     invisible(data)
+        # }
+
+        
     }
 
 

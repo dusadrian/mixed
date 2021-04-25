@@ -23,8 +23,8 @@ as_mixed(x, ...)
 unmix(x)
 }
 \arguments{
-\item{x}{A vector to label (for \code{mixed_labelled}), a labelled vector
-(for \code{as_mixed}), or a mixed labelled vector (for \code{unmix})}
+\item{x}{A numeric vector to label (for \code{mixed_labelled}), a labelled
+vector (for \code{as_mixed}), or a mixed labelled vector (for \code{unmix})}
 
 \item{labels}{A named vector or \code{NULL}. The vector should be the same type
 as \code{x}. Unlike factors, labels don't need to be exhaustive: only a fraction
@@ -63,8 +63,8 @@ To achieve that, an additional attribute called \code{tagged_values} is stored i
 variable, which is a named vector where the values are the original numbers and the names
 are the one letter tags used by the \pkg{haven} function \code{tagged_na()}.
 
-The function \code{unmix()} removes the class \code{mixed_labelled} and restores the tagged
-NAs into their original numeric values.
+The function \code{unmix()} has effect only for objects of class \code{mixed_labelled},
+by removing this class and restoring the tagged NAs into their original numeric values.
 
 A labelled object is coerced to a \code{mixed_labelled} class only if it does not contain
 tagged NA values. Missing values should be either real numbers declared as missing values,
@@ -73,6 +73,11 @@ is not a very good idea.
 
 Using the arguments \code{na_values} and \code{na_range} directly with the function
 \code{labelled()} triggers the creation of a mixed labelled object.
+
+Since tagged NA values are stored as \code{double}, declaring missing values for character
+variables will not work. In such situations, the only alternative is to use the function
+\code{labelled_spss} from package \pkg{haven}. Character varibles with defined missing
+values are specific to SPSS only, and are not supported by any other statistical software.
 }
 
 \examples{
