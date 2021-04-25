@@ -70,17 +70,17 @@
         attr(x, "na_values") <- NULL
         if (is.null(attr(x, "na_range", exact = TRUE))) {
             x <- labelled(x,
-                    labels = attr(x, "labels", exact = TRUE),
-                    label = attr(x, "label", exact = TRUE)
+                labels = attr(x, "labels", exact = TRUE),
+                label = attr(x, "label", exact = TRUE)
             )
         }
     }
     else {
         x <- mixed_labelled(x,
-                labels = attr(x, "labels", exact = TRUE),
-                na_values = value,
-                na_range = attr(x, "na_range", exact = TRUE),
-                label = attr(x, "label", exact = TRUE)
+            labels = attr(x, "labels", exact = TRUE),
+            na_values = value,
+            na_range = attr(x, "na_range", exact = TRUE),
+            label = attr(x, "label", exact = TRUE)
         )
     }
     return(x)
@@ -93,15 +93,17 @@
     attr(x, "tagged_values") <- NULL
 
     if (is.null(value)) {
-        attr(x, "na_range") <- NULL
-        class(x) <- setdiff(class(x), "mixed_labelled")
+        x <- labelled(x,
+            labels = unclass(attr(x, "labels", exact = TRUE)),
+            label = attr(x, "label", exact = TRUE)
+        )
     }
     else {
         x <- mixed_labelled(x,
-                labels = attr(x, "labels", exact = TRUE),
-                na_values = value,
-                na_range = attr(x, "na_range", exact = TRUE),
-                label = attr(x, "label", exact = TRUE)
+            labels = unclass(attr(x, "labels", exact = TRUE)),
+            na_values = value,
+            na_range = attr(x, "na_range", exact = TRUE),
+            label = attr(x, "label", exact = TRUE)
         )
     }
     
@@ -136,12 +138,12 @@
 
 `missing_range<-.default` <- function(x, value) {
     if (!is.null(value)) {
-        x <- as_mixed(labelled_spss(x,
-                labels = attr(x, "labels", exact = TRUE),
-                na_values = attr(x, "na_values", exact = TRUE),
-                na_range = value,
-                label = attr(x, "label", exact = TRUE)
-        ))
+        x <- mixed_labelled(x,
+            labels = unclass(attr(x, "labels", exact = TRUE)),
+            na_values = attr(x, "na_values", exact = TRUE),
+            na_range = value,
+            label = attr(x, "label", exact = TRUE)
+        )
     }
     return(x)
 }
@@ -150,6 +152,7 @@
     if (is.null(value)) {
         attr(x, "na_range") <- NULL
         if (is.null(attr(x, "na_values", exact = TRUE))) {
+            x <- unmix(x)
             x <- labelled(x,
                     labels = attr(x, "labels", exact = TRUE),
                     label = attr(x, "label", exact = TRUE)
@@ -158,7 +161,7 @@
     }
     else {
         x <- mixed_labelled(x,
-                labels = attr(x, "labels", exact = TRUE),
+                labels = unclass(attr(x, "labels", exact = TRUE)),
                 na_values = attr(x, "na_values", exact = TRUE),
                 na_range = value,
                 label = attr(x, "label", exact = TRUE)

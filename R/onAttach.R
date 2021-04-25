@@ -39,16 +39,6 @@
             format(out, justify = "right")
         }
 
-        do.call("unlockBinding", list(sym = "obj_print_header.haven_labelled", env = env))
-
-        env$obj_print_header.haven_labelled <- function(x, ...) {
-            if (!inherits(x, "noprint_header")) {
-                do.call("cat", list(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n")))
-                # cat(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
-            }
-            invisible(x)
-        }
-
         env <- as.environment("package:haven")
         do.call("unlockBinding", list(sym = "labelled", env = env))
 

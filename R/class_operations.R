@@ -116,10 +116,10 @@
 }
 
 `[<-.mixed_labelled` <- function(x, i, value) {
-    tv <- attr(x, "tagged_values", exact = TRUE)
-    wel <- which(is.element(value, tv))
+    tagged_values <- attr(x, "tagged_values", exact = TRUE)
+    wel <- which(is.element(value, tagged_values))
     if (length(wel) > 0) {
-        value[wel] <- tagged_na(names(tv)[is.element(tv, value[wel])])
+        value[wel] <- tagged_na(names(tagged_values)[is.element(tagged_values, value[wel])])
     }
     NextMethod()
 }
@@ -129,7 +129,7 @@
 
     checks <- lapply(cargs, function(x) {
         if (!is_mixed(x) && is.double(x)) {
-            if (any(is_tagged_na(x))) {
+            if (any(haven::is_tagged_na(x))) {
                 cat("\n")
                 stop(simpleError("Declared and tagged missing values should not be mixed.\n\n"))
             }

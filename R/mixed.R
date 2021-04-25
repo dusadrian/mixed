@@ -103,14 +103,14 @@
 
     tagged <- logical(length(x))
     if (is.double(x)) {
-        tagged <- is_tagged_na(x)
+        tagged <- haven::is_tagged_na(x)
     }
 
     tagged_values <- attrx[["tagged_values"]]
 
     if (!is.null(tagged_values) && any(tagged)) {
         nms <- names(tagged_values)
-        tags <- na_tag(x[tagged])
+        tags <- haven::na_tag(x[tagged])
         x[which(tagged)[is.element(tags, nms)]] <- unname(tagged_values[match(tags[is.element(tags, nms)], nms)])
     }
 
@@ -124,8 +124,33 @@
         stop("There should not be undeclared missing values into a mixed labelled object.\n\n", call. = FALSE)
     }
 
+    # ------------------
+    # the unclass part is VERY important to stay here, BEFORE replacing the values in the labels
+    # because of my own choice of automatically transforming any (real) value into a tagged NA
+    # when adding (but the same happens when replacing) values into a mixed_labelled object
+    labels <- unclass(attrx$labels)
+    # ------------------
+    
+    if (!is.null(labels)) {
+        tagged <- logical(length(labels))
+        if (is.double(labels)) {
+            tagged <- haven::is_tagged_na(labels)
+        }
+
+        if (!is.null(tagged_values) && any(tagged)) {
+            tags <- haven::na_tag(labels[tagged])
+            
+
+            labels[which(tagged)[is.element(tags, nms)]] <- unname(tagged_values[match(tags[is.element(tags, nms)], nms)])
+        }
+
+        attr(labels, "tagged_values") <- NULL # just in case
+        attrx$labels <- labels
+    }
+
     attrx$tagged_values <- NULL
-    attrx$class <- c("haven_labelled_spss", setdiff(attrx$class, "mixed_labelled"))
+    attrx$class <- setdiff(attrx$class, "mixed_labelled")
+    
     attributes(x) <- attrx
     return(x)
 }
@@ -165,11 +190,15 @@
     }
     
     if (!is.null(labels)) {
-        lbls <- labels
-        class(lbls) <- setdiff(class(lbls), c("haven_labelled", "vctrs_vctr", "noprint_header"))
+        lbls <- unclass(labels)
         if (!vec_is(lbls, x)) {
             cat("\n")
             stop(simpleError("`labels` must be same type as `x`.\n\n"))
+        }
+
+        oa <- list(...)
+        if (is.element("tagged_values", names(oa))) {
+            attr(labels, "tagged_values") <- oa$tagged_values
         }
     }
 
@@ -177,6 +206,8 @@
         cat("\n")
         stop(simpleError("`label` must be a character vector of length one.\n\n"))
     }
+
+    
     
     new_vctr(x,
         labels = labels,
@@ -203,9 +234,8 @@
 
     # # na_values <- vec_cast_named(na_values, x, x_arg = "na_values", to_arg = "x")
     # na_values <- stats::setNames(vec_cast(na_values, x, x_arg = "na_values", to_arg = "x"), names(na_values))
-    
     labelled <- labelled(x, labels = labels, label = label)
-
+    
     new_mixed_labelled(
         vec_data(labelled),
         labels = attr(labelled, "labels", exact = TRUE),
@@ -274,7 +304,7 @@
         }
         # add these classes to allow printing tagged NA values when asking:
         # attr(x, "labels")
-        class(labels) <- c("haven_labelled", "vctrs_vctr", "noprint_header", class(labels))
+        class(labels) <- c("mixed_labelled", "vctrs_vctr", "noprint", class(labels))
     }
     
     if (length(tagged_values) > 0) {
@@ -303,33 +333,26 @@
 }
 
 `obj_print_header.mixed_labelled` <- function(x, ...) {
-    cat(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
+    if (!inherits(x, "noprint")) {
+        cat(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
+    }
     invisible(x)
 }
 
 `obj_print_footer.mixed_labelled` <- function(x, ...) {
-    na_values <- attr(x, "na_values")
-    if (!is.null(na_values)) {
-        cat(paste0("Missing values: ", paste(na_values, collapse = ", "), "\n"))
-    }
-
-    na_range <- attr(x, "na_range")
-    if (!is.null(na_range)) {
-        cat(paste0("Missing range: [", paste(na_range, collapse = ", "), "]\n"))
-    }
-
-    labels <- attr(x, "labels", exact = TRUE)
-    if (!is.null(labels)) {
-        tagged <- haven::is_tagged_na(labels)
-        if (any(tagged)) {
-            natags <- haven::na_tag(labels)
-            tagged_values <- attr(x, "tagged_values", exact = TRUE)
-            labels[tagged] <- tagged_values[match(natags[tagged], names(tagged_values))]
-            attr(x, "labels") <- labels
+    if (!inherits(x, "noprint")) {
+        na_values <- attr(x, "na_values")
+        if (!is.null(na_values)) {
+            cat(paste0("Missing values: ", paste(na_values, collapse = ", "), "\n"))
         }
-    }
 
-    haven::print_labels(x)
+        na_range <- attr(x, "na_range")
+        if (!is.null(na_range)) {
+            cat(paste0("Missing range: [", paste(na_range, collapse = ", "), "]\n"))
+        }
+        
+        haven::print_labels(unmix(x))
+    }
 }
 
 `obj_print_data.mixed_labelled` <- function(x, ...) {
