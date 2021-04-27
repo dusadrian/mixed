@@ -22,6 +22,7 @@ as_mixed(x, ...)
 
 unmix(x)
 }
+
 \arguments{
 \item{x}{A numeric vector to label (for \code{mixed_labelled}), a labelled
 vector (for \code{as_mixed}), or a mixed labelled vector (for \code{unmix})}

@@ -47,10 +47,12 @@
     }
     
     if (any(ltagged)) {
+        labels <- unclass(labels)
         labels[ltagged] <- na_tag(labels[ltagged])
     }
 
     if (any(tagged)) {
+        y <- unclass(y)
         y[tagged] <- na_tag(x[tagged])
     }
 
