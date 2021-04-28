@@ -49,7 +49,7 @@
 }
 
 `as_mixed.haven_labelled` <- function(x, ...) {
-    if (is_mixed(x)) {
+    if (is_mixed(x) | !is.double(x)) {
         return(x)
     }
 
