@@ -233,3 +233,50 @@
     
     NextMethod()
 }
+
+
+#----------------------------------------------
+
+
+`vec_ptype_full.mixed_labelled` <- function(x, ...) {
+    paste0("mixed_labelled<", vec_ptype_full(vec_data(x)), ">")
+}
+
+`obj_print_header.mixed_labelled` <- function(x, ...) {
+    if (!inherits(x, "noprint")) {
+        cat(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
+    }
+    invisible(x)
+}
+
+`obj_print_footer.mixed_labelled` <- function(x, ...) {
+    if (!inherits(x, "noprint")) {
+        na_values <- attr(x, "na_values")
+        if (!is.null(na_values)) {
+            cat(paste0("Missing values: ", paste(na_values, collapse = ", "), "\n"))
+        }
+
+        na_range <- attr(x, "na_range")
+        if (!is.null(na_range)) {
+            cat(paste0("Missing range: [", paste(na_range, collapse = ", "), "]\n"))
+        }
+        
+        haven::print_labels(unmix(x))
+    }
+}
+
+`obj_print_data.mixed_labelled` <- function(x, ...) {
+    if (length(x) == 0) {
+        return(invisible(x))
+    }
+    
+    x <- unmix(x)
+    out <- stats::setNames(format(x), names(x))
+    print(out, quote = FALSE)
+
+    invisible(x)
+}
+
+`format.mixed_labelled` <- function(x, ..., digits = getOption("digits")) {
+    format(vec_data(unmix(x)), ...)
+}
