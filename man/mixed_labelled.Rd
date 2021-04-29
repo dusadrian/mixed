@@ -100,34 +100,26 @@ x <- labelled(c(1:5, -1), labels = c(Good = 1, Bad = 5, DK = -1))
 missing_values(x) <- -1
 x
 
+
+# a labelled_spss object can also be coerced to mixed
+x <- labelled_spss(c(1:5, -1),
+                    labels = c(Good = 1, Bad = 5, DK = -1),
+                    na_values = -1)
 x <- as_mixed(x)
 x
 
-# or it can be created directly with
-labelled(
-    c(1:5, -1),
-    labels = c(Good = 1, Bad = 5, DK = -1),
-    na_values = -1)
 
-# when using tagged NA values, however
-x <- labelled(c(1:5, .a), labels = c(Good = 1, Bad = 5, DK = .a))
+# it can be created directly with haven's labelled()
+x <- labelled(c(1:5, -1),
+                labels = c(Good = 1, Bad = 5, DK = -1),
+                na_values = -1)
 x
 
-\dontrun{
-# this will generate an error
-as_mixed(x)
-}
 
-# newly values that are already defined as missing are
-# automatically tagged as missing
-
-x <- labelled(
-        c(1:5, -1),
-        labels = c(Good = 1, Bad = 5, DK = -1),
-        na_values = -1)
-x
-
+# new values that are already defined as missing are
+# automatically tagged
 x <- c(x, 2, -1)
 
 is.na(x)
+
 }
