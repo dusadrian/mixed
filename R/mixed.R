@@ -93,7 +93,7 @@
 }
 
 `unmix.default` <- function(x) {
-    # Do nothing
+    # Do nothing, or perhaps an error?
     return(x)
 }
 
@@ -112,11 +112,7 @@
         nms <- names(tagged_values)
         tags <- haven::na_tag(x[tagged])
         x[which(tagged)[is.element(tags, nms)]] <- unname(tagged_values[match(tags[is.element(tags, nms)], nms)])
-    }
-
-    tagged <- logical(length(x))
-    if (is.double(x)) {
-        tagged <- is_tagged_na(x)
+        tagged[which(tagged)[is.element(tags, nms)]] <- FALSE
     }
 
     if (sum(tagged) > 0) {
@@ -149,14 +145,16 @@
     }
 
     attrx$tagged_values <- NULL
-    attrx$class <- setdiff(attrx$class, "mixed_labelled")
+    attrx$class <- c("haven_labelled_spss", setdiff(attrx$class, "mixed_labelled"))
     
     attributes(x) <- attrx
     return(x)
 }
 
 `unmix.data.frame` <- function(x) {
-    x[] <- lapply(x, unmix)
+    mixed <- vapply(x, is_mixed, logical(1))
+    x[mixed] <- lapply(x[mixed], unmix)
+    
     return(x)
 }
 
