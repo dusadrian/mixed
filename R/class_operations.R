@@ -213,6 +213,12 @@
     )
 }
 
+`cbind.mixed_labelled` <- function(..., deparse.level = 1) {
+    cargs <- lapply(list(...), unmix)
+    cargs$deparse.level <- deparse.level
+    do.call("cbind", cargs)
+}
+
 `as_factor.mixed_labelled` <- function(x, ..., only_labelled = TRUE) {
     oa <- list(...)
     if (is.element("unmix", names(oa)) && is.logical(oa$unmix)) {

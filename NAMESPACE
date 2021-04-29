@@ -53,6 +53,7 @@ S3method("missing_range<-", data.frame)
 
 
 S3method(c, mixed_labelled)
+S3method(cbind, mixed_labelled)
 S3method(unique, mixed_labelled)
 S3method(duplicated, mixed_labelled)
 S3method(anyDuplicated, mixed_labelled)
