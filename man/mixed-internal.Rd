@@ -2,8 +2,10 @@
 
 \alias{names_values}
 \alias{sort_labelled}
-\alias{unique_labelled}
+\alias{order_labelled}
 \alias{to_labels}
+\alias{order_tagged}
+\alias{sort_tagged}
 
 \title{Internal functions}
 

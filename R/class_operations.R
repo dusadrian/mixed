@@ -10,17 +10,47 @@
     !vec_equal(e1, e2)
 }
 
-`unique.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
-    vec_unique(unmix(x))
+`anyDuplicated.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
+    vec_duplicate_any(unmix(x))
 }
 
 `duplicated.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
+    #--------
+    # either
     x <- unmix(x)
-    vec_duplicate_id(x) != seq_along(x)
+    NextMethod()
+
+    #--------
+    # or
+    # vec_duplicate_id(unmix(x)) != seq_along(x)
 }
 
-`anyDuplicated.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
-    vec_duplicate_any(unmix(x))
+`duplicated.haven_labelled` <- function(x, incomparables = FALSE, ...) {
+    duplicates <- logical(length(x))
+    tagged <- logical(length(x))
+
+    ix <- seq_along(x)
+    if (is.double(x)) {
+        tagged <- haven::is_tagged_na(x)
+        if (any(tagged)) {
+            duplicates[ix[tagged][duplicated(haven::na_tag(x[tagged]))]] <- TRUE
+        }
+    }
+
+    duplicates[ix[!tagged][duplicated(unclass(x[!tagged]))]] <- TRUE
+
+    return(duplicates)
+}
+
+`unique.haven_labelled` <- function(x, incomparables = FALSE, ...) {
+    
+    x <- x[!duplicated(x)]
+    oa <- list(...)
+    if (is.element("sort", names(oa)) && oa$sort) {
+        return(sort_labelled(x, ... = ...))
+    }
+
+    return(x)
 }
 
 `<=.mixed_labelled` <- function(e1, e2) {
@@ -119,8 +149,29 @@
     tagged_values <- attr(x, "tagged_values", exact = TRUE)
     wel <- which(is.element(value, tagged_values))
     if (length(wel) > 0) {
-        value[wel] <- tagged_na(names(tagged_values)[is.element(tagged_values, value[wel])])
+        tags <- names(tagged_values)[match(value[wel], tagged_values)]
+        value[wel] <- haven::tagged_na(tags)
     }
+    NextMethod()
+}
+
+`mean.mixed_labelled` <- function(x, ...) {
+    x <- unmix(x)
+    
+    na_values <- attr(x, "na_values", exact = TRUE)
+    x <- x[!isElement(x, na_values)]
+    
+    na_range <- attr(x, "na_range", exact = TRUE)
+    if (!is.null(na_range)) {
+        x <- x[x < na_range[1] | x > na_range[2]]
+    }
+
+    mean(unclass(x), ...)
+}
+
+`median.mixed_labelled` <- function(x, na.rm = TRUE, ...) {
+    x <- unmix(x)
+
     NextMethod()
 }
 
@@ -279,4 +330,20 @@
 
 `format.mixed_labelled` <- function(x, ..., digits = getOption("digits")) {
     format(vec_data(unmix(x)), ...)
+}
+
+
+#----------------------------------------------
+# to propose adding to package labelled
+
+
+`drop_unused_value_labels.mixed_labelled` <- function(x) {
+    labels <- unmix(attr(x, "labels", exact = TRUE))
+    attr(x, "labels") <- as_mixed(labels[is.element(labels, unique(unmix(x)))])
+    return(x)
+}
+
+
+`sort_val_labels.mixed_labelled` <- function(x, according_to = c("values", "labels"), decreasing = FALSE) {
+    return(x[order_labelled(x, according_to = according_to, decreasing = decreasing)])    
 }

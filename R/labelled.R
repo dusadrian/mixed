@@ -4,12 +4,16 @@
     according_to <- match.arg(according_to)
     user_na <- match.arg(user_na)
     na_value = match.arg(na_value)
+
+    if (is_mixed(x)) {
+        x <- unmix(x)
+    }
     
     labels <- attr(x, "labels", exact = TRUE)
     na_values <- attr(x, "na_values", exact = TRUE)
     na_range <- attr(x, "na_range", exact = TRUE)
 
-    indexes <- seq(length(x))
+    indexes <- seq_along(x)
 
     attrx <- attributes(x)
     attributes(x) <- NULL
@@ -118,54 +122,12 @@
 
 
 `sort_labelled` <- function(x, according_to = c("values", "labels"), decreasing = FALSE,
-    user_na = c("last", "first", "ignore", "na"), na_value = c("last", "first", "na")) {
+    user_na = c("last", "first", "ignore", "na"), na_value = c("last", "first", "na"), ...) {
 
     # vec_sort() in package vctrs is somewhat similar, but still does not
     # differentiate between (hence does not sort) different tagged_na values
 
     return(x[order_labelled(x, according_to = according_to, decreasing = decreasing, user_na = user_na, na_value = na_value)])
-}
-
-
-
-`unique_labelled` <- function(x, sort = FALSE, ...) {
-
-    tagged <- logical(length(x))
-    if (is.double(x)) {
-        tagged <- is_tagged_na(x)
-    }
-
-    attrx <- NULL
-
-    if (inherits(x, "haven_labelled")) {
-        attrx <- attributes(x)
-        attributes(x) <- NULL
-    }
-
-    if (any(tagged)) {
-        x[tagged] <- na_tag(x[tagged])
-    }
-
-    dupx <- duplicated(x)
-    tagged <- tagged[!dupx]
-    x <- x[!dupx]
-
-    result <- rep(NA, length(unique(x)))
-
-    # for neither missing nor tagged values
-    result[!(is.na(x) | tagged)] <- as.numeric(x[!(is.na(x) | tagged)])
-
-    if (any(tagged)) {
-        result[tagged] <- tagged_na(x[tagged])
-    }
-    
-    attributes(result) <- attrx
-    
-    if (sort) {
-        return(sort_labelled(result, ... = ...))
-    }
-
-    return(result)
 }
 
 
@@ -307,4 +269,68 @@
     result[is.element(result, labels)] <- names(labels)[match(result[is.element(result, labels)], labels)]
     
     return(result)
+}
+
+
+
+
+`order_tagged` <- function(x, na.last = TRUE, decreasing = FALSE, method = c("auto", "shell", "radix"),
+    na_values.last = TRUE) {
+        
+    method <- match.arg(method)
+    
+    tagged <- logical(length(x))
+    if (is.double(x)) {
+        tagged <- haven::is_tagged_na(x)
+    }
+
+    ix <- seq_along(x)
+
+    truena <- ix[is.na(x) & !tagged]
+    itagged <- c()
+
+    if (is_mixed(x)) {
+        x <- unmix(x)
+    }
+    attributes(x) <- NULL
+
+    if (any(tagged)) {
+        itagged <- ix[tagged][order(x[tagged], decreasing = decreasing, method = method)]
+    }
+
+    ix <- ix[!(is.na(x) | tagged)]
+    x <- x[!(is.na(x) | tagged)]
+    
+
+    res <- c()
+    if (!na.last) {
+        res <- truena
+    }
+
+    if (!na_values.last) {
+        res <- c(res, itagged)
+    }
+    
+    res <- c(res, ix[order(x, decreasing = decreasing, method = method)])
+    
+    if (na_values.last) {
+        res <- c(res, itagged)
+    }
+    
+    if (na.last) {
+        res <- c(res, truena)
+    }
+
+    return(res)
+}
+
+
+`sort_tagged` <- function(x, decreasing = FALSE, na.last = TRUE,
+                           na_values.last = TRUE) {
+    x[order_tagged(
+        x,
+        decreasing = decreasing,
+        na.last = na.last,
+        na_values.last = na_values.last
+    )]
 }

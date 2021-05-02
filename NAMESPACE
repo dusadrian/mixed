@@ -1,6 +1,7 @@
 
 import(haven)
 import(vctrs)
+importFrom("stats", "median")
 export(
     as_mixed,
     is_mixed,
@@ -9,7 +10,10 @@ export(
     mixed_labelled,
     unmix,
     
-    unique_labelled,
+    order_tagged,
+    sort_tagged,
+    
+    order_labelled,
     sort_labelled,
     names_values,
     to_labels
@@ -54,10 +58,14 @@ S3method("missing_range<-", data.frame)
 
 S3method(c, mixed_labelled)
 S3method(cbind, mixed_labelled)
-S3method(unique, mixed_labelled)
+S3method(mean, mixed_labelled)
+S3method(median, mixed_labelled)
+S3method(duplicated, haven_labelled)
 S3method(duplicated, mixed_labelled)
+S3method(unique, haven_labelled)
 S3method(anyDuplicated, mixed_labelled)
 S3method(as_factor, mixed_labelled)
+# S3method(drop_unused_value_labels, mixed_labelled)
 
 S3method("==", mixed_labelled)
 S3method("!=", mixed_labelled)
