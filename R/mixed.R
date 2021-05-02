@@ -107,9 +107,9 @@
     }
 
     tagged_values <- attrx[["tagged_values"]]
+    nms <- names(tagged_values)
 
     if (!is.null(tagged_values) && any(tagged)) {
-        nms <- names(tagged_values)
         tags <- haven::na_tag(x[tagged])
         x[which(tagged)[is.element(tags, nms)]] <- unname(tagged_values[match(tags[is.element(tags, nms)], nms)])
         tagged[which(tagged)[is.element(tags, nms)]] <- FALSE
@@ -135,8 +135,6 @@
 
         if (!is.null(tagged_values) && any(tagged)) {
             tags <- haven::na_tag(labels[tagged])
-            
-
             labels[which(tagged)[is.element(tags, nms)]] <- unname(tagged_values[match(tags[is.element(tags, nms)], nms)])
         }
 
