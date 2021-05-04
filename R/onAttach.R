@@ -40,6 +40,22 @@
         }
 
         env <- as.environment("package:haven")
+
+        do.call("unlockBinding", list(sym = "tagged_na", env = env))
+        env$tagged_na <- function(...) {
+            return(.Call("C_tagged_na", as.character(c(...)), PACKAGE = "mixed"))
+        }
+
+        do.call("unlockBinding", list(sym = "is_tagged_na", env = env))
+        env$is_tagged_na <- function(x, tag = NULL) {
+            has_tag(x = x, tag = tag)
+        }
+
+        do.call("unlockBinding", list(sym = "na_tag", env = env))
+        env$na_tag <- function(x) {
+            get_tag(x)
+        }
+
         do.call("unlockBinding", list(sym = "labelled", env = env))
 
         env$labelled <- function(x = double(), labels = NULL, label = NULL, ...) {
@@ -61,17 +77,6 @@
                 validate_labelled(new_labelled(x, labels = labels, label = label))
             }
         }
-
-        # # this is necessary, to convert mixed_labelled objects back into labelled_spss
-        # do.call("unlockBinding", list(sym = "write_sav", env = env))
-
-        # env$write_sav <- function(data, path, compress = FALSE) {
-        #     data <- validate_sav(unmix(data))
-        #     write_sav_(data, normalizePath(path, mustWork = FALSE), compress = compress)
-        #     invisible(data)
-        # }
-
-        
     }
 
 

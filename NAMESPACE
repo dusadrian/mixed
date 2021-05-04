@@ -1,7 +1,7 @@
 
 import(haven)
 import(vctrs)
-importFrom("stats", "median")
+importFrom("stats", "median", "na.omit")
 export(
     as_mixed,
     is_mixed,
