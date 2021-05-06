@@ -6,9 +6,6 @@
 \alias{to_labels}
 \alias{order_tagged}
 \alias{sort_tagged}
-\alias{tag_na}
-\alias{has_tag}
-\alias{get_tag}
 
 \title{Internal functions}
 

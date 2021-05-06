@@ -27,14 +27,11 @@
 
 `duplicated.haven_labelled` <- function(x, incomparables = FALSE, ...) {
     duplicates <- logical(length(x))
-    tagged <- logical(length(x))
+    tagged <- admisc::has_tag(x)
 
     ix <- seq_along(x)
-    if (is.double(x)) {
-        tagged <- has_tag(x)
-        if (any(tagged)) {
-            duplicates[ix[tagged][duplicated(na_tag(x[tagged]))]] <- TRUE
-        }
+    if (any(tagged)) {
+        duplicates[ix[tagged][duplicated(admisc::get_tag(x[tagged]))]] <- TRUE
     }
 
     duplicates[ix[!tagged][duplicated(unclass(x[!tagged]))]] <- TRUE
@@ -156,7 +153,7 @@
             na_values[el] <- names(tagged_values)[match(na_values[el], tagged_values)]
         }
 
-        value[!is.na(valmatch)] <- tag_na(na_values[valmatch[!is.na(valmatch)]])
+        value[!is.na(valmatch)] <- admisc::tag_na(na_values[valmatch[!is.na(valmatch)]])
     }
 
     NextMethod()
@@ -166,7 +163,7 @@
     x <- unmix(x)
     
     na_values <- attr(x, "na_values", exact = TRUE)
-    x <- x[!isElement(x, na_values)]
+    x <- x[!admisc::isElement(x, na_values)]
     
     na_range <- attr(x, "na_range", exact = TRUE)
     if (!is.null(na_range)) {
@@ -187,7 +184,7 @@
 
     checks <- lapply(cargs, function(x) {
         if (!is_mixed(x) && is.double(x)) {
-            if (any(has_tag(x))) {
+            if (any(admisc::has_tag(x))) {
                 cat("\n")
                 stop(simpleError("Declared and tagged missing values should not be mixed.\n\n"))
             }

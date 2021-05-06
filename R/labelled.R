@@ -18,12 +18,9 @@
     attrx <- attributes(x)
     attributes(x) <- NULL
 
-    tagged <- logical(length(x))
-    if (is.double(x)) {
-        tagged <- has_tag(x)
-    }
+    tagged <- admisc::has_tag(x)
 
-    xmis <- isElement(x, na_values)
+    xmis <- admisc::isElement(x, na_values)
 
     if (!is.null(na_range)) {
         xmis <- xmis | (x >= na_range[1] & x <= na_range[2])
@@ -45,19 +42,16 @@
 
     y <- x
 
-    ltagged <- logical(length(labels))
-    if (is.double(labels)) {
-        ltagged <- has_tag(labels)
-    }
+    ltagged <- admisc::has_tag(labels)
     
     if (any(ltagged)) {
         labels <- unclass(labels)
-        labels[ltagged] <- na_tag(labels[ltagged])
+        labels[ltagged] <- admisc::get_tag(labels[ltagged])
     }
 
     if (any(tagged)) {
         y <- unclass(y)
-        y[tagged] <- na_tag(x[tagged])
+        y[tagged] <- admisc::get_tag(x[tagged])
     }
 
     if (according_to == "labels") {
@@ -114,9 +108,6 @@
 
     result <- c(result, na_indexes)
     return(result)
-
-    attributes(result) <- attrx
-    return(result)
 }
 
 
@@ -144,35 +135,30 @@
     }
     
     labels <- attr(x, "labels", exact = TRUE)
-    ltagged <- logical(length(labels))
-    if (is.double(x)) {
-        ltagged <- has_tag(labels)
-    }
+    ltagged <- admisc::has_tag(labels)
 
     tagged_labels <- labels[ltagged]
     labels <- labels[!ltagged]
     
     utag <- c()
-    tagged <- logical(length(x))
-    if (is.double(x)) {
-        tagged <- has_tag(x)
-    }
+    tagged <- admisc::has_tag(x)
+
     if (any(tagged)) {
-        utag <- sort(unique(na_tag(x[tagged])))
+        utag <- sort(unique(admisc::get_tag(x[tagged])))
         x <- x[!tagged]
     }
 
     numtag <- c()
     if (length(utag) > 0) {
-        numtag <- tag_na(utag)
+        numtag <- admisc::tag_na(utag)
         labtag <- c()
 
         if (length(tagged_labels) > 0) {
-            labtag <- na_tag(tagged_labels)
+            labtag <- admisc::get_tag(tagged_labels)
         }
 
         # names(numtag) <- paste0("NA(", utag, ")")
-        names(numtag) <- paste0(".", utag)
+        names(numtag) <- paste0(".", utag) # TODO
     
         for (i in seq(length(utag))) {
             if (any(isel <- labtag == utag[i])) {
@@ -242,28 +228,22 @@
         x <- unmix(x)
     }
 
-    tagged <- logical(length(x))
-    if (is.double(x)) {
-        tagged <- has_tag(x)
-    }
+    tagged <- admisc::has_tag(x)
     
     labels <- names_values(x)
     
     attributes(x) <- NULL
     result <- x
 
-    ltagged <- logical(length(labels))
-    if (is.double(x)) {
-        ltagged <- has_tag(labels)
-    }
+    ltagged <- admisc::has_tag(labels)
 
     
     if (any(ltagged)) {
-        labels[ltagged] <- na_tag(labels[ltagged])
+        labels[ltagged] <- admisc::get_tag(labels[ltagged])
     }
 
     if (any(tagged)) {
-        result[tagged] <- na_tag(x[tagged])
+        result[tagged] <- admisc::get_tag(x[tagged])
     }
     
     result[is.element(result, labels)] <- names(labels)[match(result[is.element(result, labels)], labels)]
@@ -279,10 +259,7 @@
         
     method <- match.arg(method)
     
-    tagged <- logical(length(x))
-    if (is.double(x)) {
-        tagged <- has_tag(x)
-    }
+    tagged <- admisc::has_tag(x)
 
     ix <- seq_along(x)
 

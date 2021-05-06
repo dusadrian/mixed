@@ -1,6 +1,7 @@
 
 import(haven)
 import(vctrs)
+importFrom("admisc", "tag_na", "has_tag", "get_tag", "is_tagged_string", "isElement", "unlockEnvironment")
 importFrom("stats", "median", "na.omit")
 export(
     as_mixed,
@@ -16,14 +17,9 @@ export(
     order_labelled,
     sort_labelled,
     names_values,
-    to_labels,
-
-    tag_na,
-    has_tag,
-    get_tag
+    to_labels
 )
 
-useDynLib(mixed, .registration = TRUE)
 
 export("missing_values<-")
 export("missing_range<-")

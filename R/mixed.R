@@ -62,7 +62,7 @@
     class(x) <- setdiff(class(x), "haven_labelled_spss")
 
     if (is.double(x)) {
-        if (sum(has_tag(x)) > 0) {
+        if (sum(admisc::has_tag(x)) > 0) {
             cat("\n")
             stop(simpleError("Declared and tagged missing values should not be mixed.\n\n"))
         }
@@ -79,12 +79,12 @@
     
     if (!is.null(unlist(tagged_values))) {
         if (length(tagged_values$justright) > 0) {
-            x[is.element(x, tagged_values$justright)] <- tag_na(x[is.element(x, tagged_values$justright)])
+            x[is.element(x, tagged_values$justright)] <- admisc::tag_na(x[is.element(x, tagged_values$justright)])
         }
         
         if (length(tagged_values$toolarge) > 0) {
             nms <- names(tagged_values$toolarge)
-            x[is.element(x, tagged_values$toolarge)] <- tag_na(names(tagged_values$toolarge)[match(x[is.element(x, tagged_values$toolarge)], tagged_values$toolarge)])
+            x[is.element(x, tagged_values$toolarge)] <- admisc::tag_na(names(tagged_values$toolarge)[match(x[is.element(x, tagged_values$toolarge)], tagged_values$toolarge)])
             attr(x, "tagged_values") <- tagged_values$toolarge
         }
 
@@ -93,11 +93,11 @@
     labels <- attr(x, "labels", exact = TRUE)
     if (!is.null(labels)) {
         if (length(tagged_values$justright) > 0) {
-            labels[is.element(labels, tagged_values$justright)] <- tag_na(labels[is.element(labels, tagged_values$justright)])
+            labels[is.element(labels, tagged_values$justright)] <- admisc::tag_na(labels[is.element(labels, tagged_values$justright)])
         }
 
         if (length(tagged_values$toolarge) > 0) {
-            labels[is.element(labels, tagged_values$toolarge)] <- tag_na(names(tagged_values$toolarge)[match(labels[is.element(labels, tagged_values$toolarge)], tagged_values$toolarge)])
+            labels[is.element(labels, tagged_values$toolarge)] <- admisc::tag_na(names(tagged_values$toolarge)[match(labels[is.element(labels, tagged_values$toolarge)], tagged_values$toolarge)])
             attr(labels, "tagged_values") <- tagged_values$toolarge
         }
 
@@ -132,20 +132,17 @@
 }
 
 `unmix.mixed_labelled` <- function(x) {
-# `unmx` <- function(x) {
+    # `unmx` <- function(x) {
     attrx <- attributes(x)
     attributes(x) <- NULL
 
-    tagged <- logical(length(x))
-    if (is.double(x)) {
-        tagged <- has_tag(x)
-    }
+    tagged <- admisc::has_tag(x)
 
     tagged_values <- attrx[["tagged_values"]]
     nms <- names(tagged_values)
     
     if (any(tagged)) {
-        tags <- lapply(as.list(get_tag(x[tagged])), function(x) {
+        tags <- lapply(as.list(admisc::get_tag(x[tagged])), function(x) {
             if (!is.na(suppressWarnings(as.numeric(x)))) {
                 x <- as.numeric(x)
             }
@@ -179,13 +176,10 @@
     
     # ------------------
     if (!is.null(labels)) {
-        tagged <- logical(length(labels))
-        if (is.double(labels)) {
-            tagged <- has_tag(labels)
-        }
+        tagged <- admisc::has_tag(labels)
         
         if (any(tagged)) {
-            tags <- lapply(as.list(get_tag(labels[tagged])), function(x) {
+            tags <- lapply(as.list(admisc::get_tag(labels[tagged])), function(x) {
                 if (!is.na(suppressWarnings(as.numeric(x)))) {
                     x <- as.numeric(x)
                 }
@@ -321,7 +315,7 @@
         }
     }
     
-    if (any(has_tag(x))) {
+    if (any(admisc::has_tag(x))) {
         cat("\n")
         stop(simpleError("Cannot mix declared and tagged missing values.\n\n"))
     }
@@ -363,22 +357,22 @@
     }
 
     if (length(declared[nchars < 3]) > 0) {
-        x[is.element(x, declared[nchars < 3])] <- tag_na(x[is.element(x, declared[nchars < 3])])
+        x[is.element(x, declared[nchars < 3])] <- admisc::tag_na(x[is.element(x, declared[nchars < 3])])
     }
 
     if (length(tagged_values) > 0) {
-        x[is.element(x, tagged_values)] <- tag_na(letters[match(x[is.element(x, tagged_values)], tagged_values)])
+        x[is.element(x, tagged_values)] <- admisc::tag_na(letters[match(x[is.element(x, tagged_values)], tagged_values)])
     }
 
 
 
     if (!is.null(labels)) {
         if (length(declared[nchars < 3]) > 0) {
-            labels[is.element(labels, declared[nchars < 3])] <- tag_na(labels[is.element(labels, declared[nchars < 3])])
+            labels[is.element(labels, declared[nchars < 3])] <- admisc::tag_na(labels[is.element(labels, declared[nchars < 3])])
         }
 
         if (length(tagged_values) > 0) {
-            labels[is.element(labels, tagged_values)] <- tag_na(letters[match(labels[is.element(labels, tagged_values)], tagged_values)])
+            labels[is.element(labels, tagged_values)] <- admisc::tag_na(letters[match(labels[is.element(labels, tagged_values)], tagged_values)])
         }
 
         # add these classes to allow printing tagged NA values when asking:

@@ -1,5 +1,5 @@
 .onAttach <- function(...) {
-    to_load <- c("vctrs", "haven")
+    to_load <- c("vctrs", "haven", "admisc")
     
     # code borrowed from package tidyverse
     
@@ -10,7 +10,7 @@
             loc <- dirname(getNamespaceInfo(pkg, "path"))
             do.call(
                 "library",
-                list(pkg, lib.loc = loc, character.only = TRUE, warn.conflicts = FALSE)
+                list(pkg, lib.loc = loc, pos = 3, character.only = TRUE, warn.conflicts = FALSE)
             )
         }
     }
@@ -29,21 +29,18 @@
     }
 
     env <- asNamespace("haven")
-    if (.Call("unlockEnvironment", env, PACKAGE = "mixed")) {
+    if (admisc::unlockEnvironment(env)) {
         
         do.call("unlockBinding", list(sym = "format_tagged_na", env = env))
 
         env$format_tagged_na <- function(x, digits = getOption("digits")) {
-            tagged <- logical(length(x))
-            if (is.double(x)) {
-                tagged <- mixed::has_tag(x)
-            }
+            tagged <- admisc::has_tag(x)
 
             out <- format(vec_data(x), digits = digits)
             if (any(tagged)) {
-                out[tagged] <- paste0(".", mixed::get_tag(x[tagged]))
+                out[tagged] <- paste0(".", admisc::get_tag(x[tagged]))
             }
-            
+
             format(out, justify = "right")
         }
 
@@ -51,17 +48,17 @@
 
         do.call("unlockBinding", list(sym = "tagged_na", env = env))
         env$tagged_na <- function(...) {
-            mixed::tag_na(...)
+            admisc::tag_na(...)
         }
 
         do.call("unlockBinding", list(sym = "is_tagged_na", env = env))
         env$is_tagged_na <- function(x, tag = NULL) {
-            mixed::has_tag(x = x, tag = tag)
+            admisc::has_tag(x = x, tag = tag)
         }
 
         do.call("unlockBinding", list(sym = "na_tag", env = env))
         env$na_tag <- function(x) {
-            mixed::get_tag(x)
+            admisc::get_tag(x)
         }
 
         do.call("unlockBinding", list(sym = "labelled", env = env))
@@ -86,7 +83,7 @@
             }
         }
 
-        # labelled <- !grepl("there is no package called", tryCatch(find.package("labelled"), error = function(e) e))
+        
 
         
     }
