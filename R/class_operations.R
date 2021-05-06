@@ -31,9 +31,9 @@
 
     ix <- seq_along(x)
     if (is.double(x)) {
-        tagged <- haven::is_tagged_na(x)
+        tagged <- has_tag(x)
         if (any(tagged)) {
-            duplicates[ix[tagged][duplicated(haven::na_tag(x[tagged]))]] <- TRUE
+            duplicates[ix[tagged][duplicated(na_tag(x[tagged]))]] <- TRUE
         }
     }
 
@@ -146,12 +146,19 @@
 }
 
 `[<-.mixed_labelled` <- function(x, i, value) {
-    tagged_values <- attr(x, "tagged_values", exact = TRUE)
-    wel <- which(is.element(value, tagged_values))
-    if (length(wel) > 0) {
-        tags <- names(tagged_values)[match(value[wel], tagged_values)]
-        value[wel] <- haven::tagged_na(tags)
+    na_values <- attr(x, "na_values", exact = TRUE)
+    
+    if (any(is.element(value, na_values))) {
+        valmatch <- match(value, na_values)
+        tagged_values <- attr(x, "tagged_values", exact = TRUE)
+        if (!is.null(tagged_values)) {
+            el <- is.element(na_values, tagged_values)
+            na_values[el] <- names(tagged_values)[match(na_values[el], tagged_values)]
+        }
+
+        value[!is.na(valmatch)] <- tag_na(na_values[valmatch[!is.na(valmatch)]])
     }
+
     NextMethod()
 }
 
@@ -180,7 +187,7 @@
 
     checks <- lapply(cargs, function(x) {
         if (!is_mixed(x) && is.double(x)) {
-            if (any(haven::is_tagged_na(x))) {
+            if (any(has_tag(x))) {
                 cat("\n")
                 stop(simpleError("Declared and tagged missing values should not be mixed.\n\n"))
             }
@@ -322,6 +329,7 @@
     }
     
     x <- unmix(x)
+    
     out <- stats::setNames(format(x), names(x))
     print(out, quote = FALSE)
 

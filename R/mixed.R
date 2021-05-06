@@ -9,9 +9,8 @@
     misvals <- c()
 
     if (is.null(na_values) & is.null(na_range)) {
-        return(misvals)
+        return(list())
     }
-
 
     if (!is.null(na_values)) {
         misvals <- sort(na_values)
@@ -30,13 +29,19 @@
         misvals <- sort(unique(c(misvals, uniques)))
     }
 
-    if (length(misvals) > length(letters)) {
+    nchars <- nchar(abs(misvals))
+    result <- list(justright = misvals[nchars < 3], toolarge = misvals[nchars > 2])
+    
+    if (length(result$toolarge) > length(letters)) {
         cat("\n")
         stop(simpleError("Too large span of missing values.\n\n"))
     }
 
-    names(misvals) <- letters[seq(length(misvals))]
-    return(misvals)
+    if (length(result$toolarge) > 0) {
+        names(result$toolarge) <- letters[seq(length(result$toolarge))]
+    }
+
+    return(result)
 }
 
 `as_mixed` <- function(x, ...) {
@@ -49,31 +54,60 @@
 }
 
 `as_mixed.haven_labelled` <- function(x, ...) {
-    if (is_mixed(x) | !is.double(x)) {
+    
+    if (is_mixed(x) | !inherits(x, "haven_labelled")) {
         return(x)
     }
 
     class(x) <- setdiff(class(x), "haven_labelled_spss")
-    
-    tagged <- logical(length(x))
+
     if (is.double(x)) {
-        tagged <- is_tagged_na(x)
+        if (sum(has_tag(x)) > 0) {
+            cat("\n")
+            stop(simpleError("Declared and tagged missing values should not be mixed.\n\n"))
+        }
+    }
+    else {
+        attrx <- attributes(x)
+        x <- as.double(x)
+        attrx$class[length(attrx$class)] <- "double"
+        attributes(x) <- attrx
     }
     
-    if (sum(tagged) > 0) {
-        cat("\n")
-        stop(simpleError("Declared and tagged missing values should not be mixed.\n\n"))
-    }
 
     tagged_values <- values_to_tag(x)
     
-    if (length(tagged_values) > 0) {
-        nms <- names(tagged_values)
-        x[is.element(x, tagged_values)] <- tagged_na(names(tagged_values)[match(x[is.element(x, tagged_values)], tagged_values)])
-        attr(x, "tagged_values") <- tagged_values
-        class(x) <- c("mixed_labelled", class(x))
+    if (!is.null(unlist(tagged_values))) {
+        if (length(tagged_values$justright) > 0) {
+            x[is.element(x, tagged_values$justright)] <- tag_na(x[is.element(x, tagged_values$justright)])
+        }
+        
+        if (length(tagged_values$toolarge) > 0) {
+            nms <- names(tagged_values$toolarge)
+            x[is.element(x, tagged_values$toolarge)] <- tag_na(names(tagged_values$toolarge)[match(x[is.element(x, tagged_values$toolarge)], tagged_values$toolarge)])
+            attr(x, "tagged_values") <- tagged_values$toolarge
+        }
+
     }
 
+    labels <- attr(x, "labels", exact = TRUE)
+    if (!is.null(labels)) {
+        if (length(tagged_values$justright) > 0) {
+            labels[is.element(labels, tagged_values$justright)] <- tag_na(labels[is.element(labels, tagged_values$justright)])
+        }
+
+        if (length(tagged_values$toolarge) > 0) {
+            labels[is.element(labels, tagged_values$toolarge)] <- tag_na(names(tagged_values$toolarge)[match(labels[is.element(labels, tagged_values$toolarge)], tagged_values$toolarge)])
+            attr(labels, "tagged_values") <- tagged_values$toolarge
+        }
+
+        # add these classes to allow printing tagged NA values when asking:
+        # attr(x, "labels")
+        class(labels) <- c("mixed_labelled", "vctrs_vctr", "noprint", class(labels))
+        attr(x, "labels") <- labels
+    }
+
+    class(x) <- c("mixed_labelled", class(x))
     return(x)
 }
 
@@ -98,21 +132,38 @@
 }
 
 `unmix.mixed_labelled` <- function(x) {
+# `unmx` <- function(x) {
     attrx <- attributes(x)
     attributes(x) <- NULL
 
     tagged <- logical(length(x))
     if (is.double(x)) {
-        tagged <- haven::is_tagged_na(x)
+        tagged <- has_tag(x)
     }
 
     tagged_values <- attrx[["tagged_values"]]
     nms <- names(tagged_values)
+    
+    if (any(tagged)) {
+        tags <- lapply(as.list(get_tag(x[tagged])), function(x) {
+            if (!is.na(suppressWarnings(as.numeric(x)))) {
+                x <- as.numeric(x)
+            }
+            return(x)
+        })
+        
 
-    if (!is.null(tagged_values) && any(tagged)) {
-        tags <- haven::na_tag(x[tagged])
-        x[which(tagged)[is.element(tags, nms)]] <- unname(tagged_values[match(tags[is.element(tags, nms)], nms)])
-        tagged[which(tagged)[is.element(tags, nms)]] <- FALSE
+        numtags <- unlist(lapply(tags, is.numeric))
+        if (sum(numtags) > 0) {
+            x[which(tagged)[numtags]] <- unlist(tags[numtags])
+            tagged[which(tagged)[numtags]] <- FALSE
+            tags <- unlist(tags[!numtags])
+        }
+        
+        if (!is.null(tags) && !is.null(tagged_values)) {
+            x[which(tagged)[is.element(tags, nms)]] <- unname(tagged_values[match(tags[is.element(tags, nms)], nms)])
+            tagged[which(tagged)[is.element(tags, nms)]] <- FALSE
+        }
     }
 
     if (sum(tagged) > 0) {
@@ -125,17 +176,34 @@
     # because of my own choice of automatically transforming any (real) value into a tagged NA
     # when adding (but the same happens when replacing) values into a mixed_labelled object
     labels <- unclass(attrx$labels)
-    # ------------------
     
+    # ------------------
     if (!is.null(labels)) {
         tagged <- logical(length(labels))
         if (is.double(labels)) {
-            tagged <- haven::is_tagged_na(labels)
+            tagged <- has_tag(labels)
         }
+        
+        if (any(tagged)) {
+            tags <- lapply(as.list(get_tag(labels[tagged])), function(x) {
+                if (!is.na(suppressWarnings(as.numeric(x)))) {
+                    x <- as.numeric(x)
+                }
+                return(x)
+            })
+            
+            numtags <- unlist(lapply(tags, is.numeric))
+            
+            if (sum(numtags) > 0) {
+                labels[which(tagged)[numtags]] <- unlist(tags[numtags])
+                tagged[numtags] <- FALSE
+                tags <- unlist(tags[!numtags])
+            }
 
-        if (!is.null(tagged_values) && any(tagged)) {
-            tags <- haven::na_tag(labels[tagged])
-            labels[which(tagged)[is.element(tags, nms)]] <- unname(tagged_values[match(tags[is.element(tags, nms)], nms)])
+            if (!is.null(tags) && !is.null(tagged_values)) {
+                labels[which(tagged)[is.element(tags, nms)]] <- unname(tagged_values[match(tags[is.element(tags, nms)], nms)])
+            }
+
         }
 
         attr(labels, "tagged_values") <- NULL # just in case
@@ -144,7 +212,6 @@
 
     attrx$tagged_values <- NULL
     attrx$class <- c("haven_labelled_spss", setdiff(attrx$class, "mixed_labelled"))
-    
     attributes(x) <- attrx
     return(x)
 }
@@ -194,7 +261,9 @@
 
         oa <- list(...)
         if (is.element("tagged_values", names(oa))) {
-            attr(labels, "tagged_values") <- oa$tagged_values
+            if (length(oa$tagged_values) > 0) {
+                attr(labels, "tagged_values") <- oa$tagged_values
+            }
         }
     }
 
@@ -252,7 +321,7 @@
         }
     }
     
-    if (any(is_tagged_na(x))) {
+    if (any(has_tag(x))) {
         cat("\n")
         stop(simpleError("Cannot mix declared and tagged missing values.\n\n"))
     }
@@ -283,21 +352,35 @@
         stop(simpleError("Missing values can be declared only for numeric variables.\n\n"))
     }
     
-    tagged_values <- sort(unique(x[declared]))
+    declared <- sort(unique(x[declared]))
     
+    nchars <- nchar(abs(declared))
+    tagged_values <- declared[nchars > 2]
+
     if (length(tagged_values) > length(letters)) {
         cat("\n")
-        stop(simpleError("Too many declared missing values.\n\n"))
-    }
-    
-    for (i in seq(length(tagged_values))) {
-        x[x == tagged_values[i]] <- tagged_na(letters[i])
+        stop(simpleError("Too many large missing values.\n\n"))
     }
 
+    if (length(declared[nchars < 3]) > 0) {
+        x[is.element(x, declared[nchars < 3])] <- tag_na(x[is.element(x, declared[nchars < 3])])
+    }
+
+    if (length(tagged_values) > 0) {
+        x[is.element(x, tagged_values)] <- tag_na(letters[match(x[is.element(x, tagged_values)], tagged_values)])
+    }
+
+
+
     if (!is.null(labels)) {
-        for (i in seq(length(tagged_values))) {
-            labels[labels == tagged_values[i]] <- tagged_na(letters[i])
+        if (length(declared[nchars < 3]) > 0) {
+            labels[is.element(labels, declared[nchars < 3])] <- tag_na(labels[is.element(labels, declared[nchars < 3])])
         }
+
+        if (length(tagged_values) > 0) {
+            labels[is.element(labels, tagged_values)] <- tag_na(letters[match(labels[is.element(labels, tagged_values)], tagged_values)])
+        }
+
         # add these classes to allow printing tagged NA values when asking:
         # attr(x, "labels")
         class(labels) <- c("mixed_labelled", "vctrs_vctr", "noprint", class(labels))

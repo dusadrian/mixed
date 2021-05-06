@@ -20,7 +20,7 @@
 
     tagged <- logical(length(x))
     if (is.double(x)) {
-        tagged <- is_tagged_na(x)
+        tagged <- has_tag(x)
     }
 
     xmis <- isElement(x, na_values)
@@ -47,7 +47,7 @@
 
     ltagged <- logical(length(labels))
     if (is.double(labels)) {
-        ltagged <- is_tagged_na(labels)
+        ltagged <- has_tag(labels)
     }
     
     if (any(ltagged)) {
@@ -146,7 +146,7 @@
     labels <- attr(x, "labels", exact = TRUE)
     ltagged <- logical(length(labels))
     if (is.double(x)) {
-        ltagged <- is_tagged_na(labels)
+        ltagged <- has_tag(labels)
     }
 
     tagged_labels <- labels[ltagged]
@@ -155,7 +155,7 @@
     utag <- c()
     tagged <- logical(length(x))
     if (is.double(x)) {
-        tagged <- is_tagged_na(x)
+        tagged <- has_tag(x)
     }
     if (any(tagged)) {
         utag <- sort(unique(na_tag(x[tagged])))
@@ -164,7 +164,7 @@
 
     numtag <- c()
     if (length(utag) > 0) {
-        numtag <- tagged_na(utag)
+        numtag <- tag_na(utag)
         labtag <- c()
 
         if (length(tagged_labels) > 0) {
@@ -244,7 +244,7 @@
 
     tagged <- logical(length(x))
     if (is.double(x)) {
-        tagged <- is_tagged_na(x)
+        tagged <- has_tag(x)
     }
     
     labels <- names_values(x)
@@ -254,7 +254,7 @@
 
     ltagged <- logical(length(labels))
     if (is.double(x)) {
-        ltagged <- is_tagged_na(labels)
+        ltagged <- has_tag(labels)
     }
 
     
@@ -281,7 +281,7 @@
     
     tagged <- logical(length(x))
     if (is.double(x)) {
-        tagged <- haven::is_tagged_na(x)
+        tagged <- has_tag(x)
     }
 
     ix <- seq_along(x)

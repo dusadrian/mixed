@@ -34,8 +34,16 @@
         do.call("unlockBinding", list(sym = "format_tagged_na", env = env))
 
         env$format_tagged_na <- function(x, digits = getOption("digits")) {
+            tagged <- logical(length(x))
+            if (is.double(x)) {
+                tagged <- mixed::has_tag(x)
+            }
+
             out <- format(vec_data(x), digits = digits)
-            out[is_tagged_na(x)] <- paste0(".", na_tag(x)[is_tagged_na(x)])
+            if (any(tagged)) {
+                out[tagged] <- paste0(".", mixed::get_tag(x[tagged]))
+            }
+            
             format(out, justify = "right")
         }
 
@@ -43,17 +51,17 @@
 
         do.call("unlockBinding", list(sym = "tagged_na", env = env))
         env$tagged_na <- function(...) {
-            return(.Call("C_tagged_na", as.character(c(...)), PACKAGE = "mixed"))
+            mixed::tag_na(...)
         }
 
         do.call("unlockBinding", list(sym = "is_tagged_na", env = env))
         env$is_tagged_na <- function(x, tag = NULL) {
-            has_tag(x = x, tag = tag)
+            mixed::has_tag(x = x, tag = tag)
         }
 
         do.call("unlockBinding", list(sym = "na_tag", env = env))
         env$na_tag <- function(x) {
-            get_tag(x)
+            mixed::get_tag(x)
         }
 
         do.call("unlockBinding", list(sym = "labelled", env = env))
@@ -77,6 +85,10 @@
                 validate_labelled(new_labelled(x, labels = labels, label = label))
             }
         }
+
+        # labelled <- !grepl("there is no package called", tryCatch(find.package("labelled"), error = function(e) e))
+
+        
     }
 
 

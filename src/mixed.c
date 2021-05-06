@@ -27,6 +27,9 @@ https://github.com/wch/r-source/blob/HEAD/src/include/R_ext/Arith.h#L41-L45
 https://github.com/wch/r-source/blob/HEAD/src/main/arithmetic.c#L112-L120
 http://www.cs.toronto.edu/~radford/ftp/fltcompress.pdf
 
+https://stackoverflow.com/questions/23212538/float-and-double-significand-numbers-mantissa-pov
+https://github.com/wch/r-source/blob/HEAD/src/main/arithmetic.c#L112-L120
+
 
 THE FOLLOWING FUNCTIONS ARE ADAPTED FROM PACKAGE HAVEN
 
@@ -61,7 +64,7 @@ const int TAG_BYTE = 4;
 #endif
 
 
-SEXP C_tagged_na(SEXP x) {
+SEXP _tag_na(SEXP x) {
     int n = Rf_length(x);
     SEXP out = PROTECT(Rf_allocVector(REALSXP, n));
 
@@ -96,8 +99,6 @@ SEXP C_tagged_na(SEXP x) {
         REAL(out)[i] = y.value;
     }
 
-
-
     UNPROTECT(1);
     return(out);
 }
@@ -106,7 +107,7 @@ SEXP C_tagged_na(SEXP x) {
 
 
 
-SEXP C_is_tagged_na(SEXP x, SEXP tag_) {
+SEXP _has_tag(SEXP x, SEXP tag_) {
     int n = Rf_length(x);
     SEXP out = PROTECT(Rf_allocVector(LGLSXP, n));
 
@@ -131,7 +132,8 @@ SEXP C_is_tagged_na(SEXP x, SEXP tag_) {
                 
                 if (tag == '\0') {
                     LOGICAL(out)[i] = false;
-                } else {
+                }
+                else {
                     if (TYPEOF(tag_) != NILSXP) {
 
                         int nchars = Rf_length(STRING_ELT(tag_, 0));
@@ -155,7 +157,6 @@ SEXP C_is_tagged_na(SEXP x, SEXP tag_) {
                             
                             LOGICAL(out)[i] = test;
                         }
-
                     }
                     else {
                         LOGICAL(out)[i] = true;
@@ -171,7 +172,7 @@ SEXP C_is_tagged_na(SEXP x, SEXP tag_) {
 
 
 
-SEXP C_na_tag(SEXP x) {
+SEXP _get_tag(SEXP x) {
     
     int n = Rf_length(x);
     SEXP out = PROTECT(Rf_allocVector(STRSXP, n));
@@ -181,7 +182,8 @@ SEXP C_na_tag(SEXP x) {
 
         if (!isnan(xi)) {
             SET_STRING_ELT(out, i, NA_STRING);
-        } else {
+        }
+        else {
             
             ieee_double y;
             y.value = xi;
@@ -192,7 +194,6 @@ SEXP C_na_tag(SEXP x) {
             if (firstminus) {
                 test[0] = CHAR(mkChar("-"))[0];
             }
-
 
             test[firstminus] = y.byte[TAG_BYTE];
 

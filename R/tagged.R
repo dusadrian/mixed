@@ -1,3 +1,7 @@
+`tag_na` <- function(...) {
+    return(.Call("_tag_na", as.character(c(...)), PACKAGE = "mixed"))
+}
+
 `has_tag` <- function(x, tag = NULL) {
     if (!is.double(x)) {
         return(logical(length(x)))
@@ -7,8 +11,12 @@
         cat("\n")
         stop("`tag` should be a vector of length 1.\n\n", call. = FALSE)
     }
+    
+    if (!is.null(tag)) {
+        tag <- as.character(tag)
+    }
 
-    return(.Call("C_is_tagged_na", x, as.character(tag)))
+    return(.Call("_has_tag", x, tag, PACKAGE = "mixed"))
 }
 
 `get_tag` <- function(x) {
@@ -16,7 +24,7 @@
         return(gsub("N|A|\\(|\\)|\\.", "",  x))
     }
     else if (is.double(x)) {
-        x <- .Call("C_na_tag", x, PACKAGE = "mixed")
+        x <- .Call("_get_tag", x, PACKAGE = "mixed")
         if (!any(is.na(suppressWarnings(as.numeric(na.omit(x)))))) {
             x <- as.numeric(x)
         }
@@ -35,11 +43,10 @@
         return(logical(length(x)))
     }
 
+    ncharx <- nchar(x)
+
     return(
-        is.element(get_tag(x), letters) && 
-        (
-            (nchar(x) == 2 & grepl("^\\.", x)) ||
-            (nchar(x) == 5 & grepl("^NA\\(", x) & grepl("\\)", x))
-        )
+        ncharx > 1 &
+        ((ncharx < 4 & grepl("^\\.", x)) | (ncharx < 7 & grepl("^NA\\(", x) & grepl("\\)", x)))
     )
 }

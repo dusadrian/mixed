@@ -16,7 +16,11 @@ export(
     order_labelled,
     sort_labelled,
     names_values,
-    to_labels
+    to_labels,
+
+    tag_na,
+    has_tag,
+    get_tag
 )
 
 useDynLib(mixed, .registration = TRUE)
