@@ -6,6 +6,8 @@
 \alias{to_labels}
 \alias{order_tagged}
 \alias{sort_tagged}
+\alias{format_tagged}
+\alias{is_tagged_string}
 
 \title{Internal functions}
 

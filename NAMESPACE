@@ -1,34 +1,36 @@
 
 import(haven)
+import(labelled)
 import(vctrs)
-importFrom("admisc", "tag_na", "has_tag", "get_tag", "is_tagged_string", "isElement", "unlockEnvironment")
 importFrom("stats", "median", "na.omit")
+importFrom("utils", "assignInNamespace")
+
 export(
     as_mixed,
     is_mixed,
-    missing_values,
-    missing_range,
     mixed_labelled,
     unmix,
-    
-    order_tagged,
-    sort_tagged,
     
     order_labelled,
     sort_labelled,
     names_values,
-    to_labels
+    to_labels,
+
+    tag,
+    has_tag,
+    get_tag,
+    untag,
+    isElement,
+    is_tagged_string,
+    format_tagged,
+    order_tagged,
+    sort_tagged,
+
+    .onAttach
 )
 
 
-export("missing_values<-")
-export("missing_range<-")
-
 S3method(vec_ptype_full, mixed_labelled)
-S3method(obj_print_header, mixed_labelled)
-S3method(obj_print_data, mixed_labelled)
-S3method(obj_print_footer, mixed_labelled)
-S3method(format, mixed_labelled)
 
 S3method(as_mixed, default)
 S3method(as_mixed, haven_labelled)
@@ -37,82 +39,39 @@ S3method(unmix, default)
 S3method(unmix, mixed_labelled)
 S3method(unmix, data.frame)
 
-S3method(missing_values, default)
-S3method(missing_values, haven_labelled_spss)
-S3method(missing_values, mixed_labelled)
-S3method(missing_values, data.frame)
-S3method(missing_range, default)
-S3method(missing_range, haven_labelled_spss)
-S3method(missing_range, mixed_labelled)
-S3method(missing_range, data.frame)
+S3method(na_values, mixed_labelled)
+S3method(na_range, mixed_labelled)
 
-S3method("missing_values<-", default)
-S3method("missing_values<-", haven_labelled)
-S3method("missing_values<-", mixed_labelled)
-S3method("missing_values<-", data.frame)
-S3method("missing_range<-", default)
-S3method("missing_range<-", haven_labelled)
-S3method("missing_range<-", mixed_labelled)
-S3method("missing_range<-", data.frame)
+# S3method("na_values<-", haven_labelled)
+S3method("na_values<-", mixed_labelled)
+S3method("na_range<-", mixed_labelled)
 
 
-S3method(c, mixed_labelled)
+# S3method(c, mixed_labelled)
 S3method(cbind, mixed_labelled)
-S3method(mean, mixed_labelled)
-S3method(median, mixed_labelled)
+S3method(mean, haven_labelled)
 S3method(duplicated, haven_labelled)
-S3method(duplicated, mixed_labelled)
+S3method(duplicated, tagged)
 S3method(unique, haven_labelled)
-S3method(anyDuplicated, mixed_labelled)
+S3method(unique, tagged)
+S3method(sort, tagged)
+S3method(anyDuplicated, haven_labelled)
+
 S3method(as_factor, mixed_labelled)
-# S3method(drop_unused_value_labels, mixed_labelled)
+S3method(drop_unused_value_labels, mixed_labelled)
 
-S3method("==", mixed_labelled)
-S3method("!=", mixed_labelled)
-S3method("<=", mixed_labelled)
-S3method("<", mixed_labelled)
-S3method(">=", mixed_labelled)
-S3method(">", mixed_labelled)
-S3method("+", mixed_labelled)
-S3method("-", mixed_labelled)
+S3method("==", haven_labelled)
+S3method("!=", haven_labelled)
+S3method("<=", haven_labelled)
+S3method("<", haven_labelled)
+S3method(">=", haven_labelled)
+S3method(">", haven_labelled)
 
-S3method("*", mixed_labelled)
-S3method("/", mixed_labelled)
-S3method("^", mixed_labelled)
-S3method("%%", mixed_labelled)
-S3method("%/%", mixed_labelled)
-S3method("!", mixed_labelled)
-S3method("&", mixed_labelled)
-S3method("|", mixed_labelled)
-S3method("[<-", mixed_labelled)
 
-export(
-   .onAttach,
-   .a,
-   .b,
-   .c,
-   .d,
-   .e,
-   .f,
-   .g,
-   .h,
-   .i,
-   .j,
-   .k,
-   .l,
-   .m,
-   .n,
-   .o,
-   .p,
-   .q,
-   .r,
-   .s,
-   .t,
-   .u,
-   .v,
-   .w,
-   .x,
-   .y,
-   .z,
-   .missing
-)
+S3method(print, tagged)
+S3method(format, tagged)
+
+
+S3method("[<-", haven_labelled)
+
+useDynLib(mixed, .registration = TRUE)

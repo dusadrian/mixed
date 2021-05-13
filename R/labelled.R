@@ -6,7 +6,7 @@
     na_value = match.arg(na_value)
 
     if (is_mixed(x)) {
-        x <- unmix(x)
+        x <- untag(x)
     }
     
     labels <- attr(x, "labels", exact = TRUE)
@@ -18,9 +18,9 @@
     attrx <- attributes(x)
     attributes(x) <- NULL
 
-    tagged <- admisc::has_tag(x)
+    tagged <- has_tag(x)
 
-    xmis <- admisc::isElement(x, na_values)
+    xmis <- isElement(x, na_values)
 
     if (!is.null(na_range)) {
         xmis <- xmis | (x >= na_range[1] & x <= na_range[2])
@@ -42,16 +42,16 @@
 
     y <- x
 
-    ltagged <- admisc::has_tag(labels)
+    ltagged <- has_tag(labels)
     
     if (any(ltagged)) {
         labels <- unclass(labels)
-        labels[ltagged] <- admisc::get_tag(labels[ltagged])
+        labels[ltagged] <- get_tag(labels[ltagged])
     }
 
     if (any(tagged)) {
         y <- unclass(y)
-        y[tagged] <- admisc::get_tag(x[tagged])
+        y[tagged] <- get_tag(x[tagged])
     }
 
     if (according_to == "labels") {
@@ -131,39 +131,47 @@
     }
 
     if (inherits(x, "mixed_labelled")) {
-        x <- unmix(x)
+        x <- untag(x)
     }
     
     labels <- attr(x, "labels", exact = TRUE)
-    ltagged <- admisc::has_tag(labels)
+    ltagged <- has_tag(labels)
 
     tagged_labels <- labels[ltagged]
     labels <- labels[!ltagged]
     
     utag <- c()
-    tagged <- admisc::has_tag(x)
+    tagged <- has_tag(x)
 
     if (any(tagged)) {
-        utag <- sort(unique(admisc::get_tag(x[tagged])))
+        utag <- sort(unique(get_tag(x[tagged])))
         x <- x[!tagged]
     }
 
-    numtag <- c()
+    tags <- c()
     if (length(utag) > 0) {
-        numtag <- admisc::tag_na(utag)
+
+        lutag <- unlist(lapply(as.list(utag), function(x) {
+            if (is.na(suppressWarnings(as.numeric(x)))) {
+                x <- paste0(".", x)
+            }
+            return(x)
+        }))
+
         labtag <- c()
 
         if (length(tagged_labels) > 0) {
-            labtag <- admisc::get_tag(tagged_labels)
+            labtag <- get_tag(tagged_labels)
         }
 
-        # names(numtag) <- paste0("NA(", utag, ")")
-        names(numtag) <- paste0(".", utag) # TODO
+        tags <- tag(utag)
+        # names(tags) <- paste0("NA(", utag, ")")
+        names(tags) <- lutag
     
         for (i in seq(length(utag))) {
             if (any(isel <- labtag == utag[i])) {
                 # only one can be true, impossible more
-                names(numtag)[i] <- names(tagged_labels)[isel]
+                names(tags)[i] <- names(tagged_labels)[isel]
             }
         }
     }
@@ -209,8 +217,8 @@
         }
     }
 
-    result <- c(xnotmis, xmis, numtag)
-    attr(result, 'missing') <- c(xmis, numtag)
+    result <- c(xnotmis, xmis, tags)
+    attr(result, 'missing') <- c(xmis, tags)
 
     return(result)
 }
@@ -225,89 +233,28 @@
     }
 
     if (inherits(x, "mixed_labelled")) {
-        x <- unmix(x)
+        x <- untag(x)
     }
 
-    tagged <- admisc::has_tag(x)
+    tagged <- has_tag(x)
     
     labels <- names_values(x)
     
     attributes(x) <- NULL
     result <- x
 
-    ltagged <- admisc::has_tag(labels)
+    ltagged <- has_tag(labels)
 
     
     if (any(ltagged)) {
-        labels[ltagged] <- admisc::get_tag(labels[ltagged])
+        labels[ltagged] <- get_tag(labels[ltagged])
     }
 
     if (any(tagged)) {
-        result[tagged] <- admisc::get_tag(x[tagged])
+        result[tagged] <- get_tag(x[tagged])
     }
     
     result[is.element(result, labels)] <- names(labels)[match(result[is.element(result, labels)], labels)]
     
     return(result)
-}
-
-
-
-
-`order_tagged` <- function(x, na.last = TRUE, decreasing = FALSE, method = c("auto", "shell", "radix"),
-    na_values.last = TRUE) {
-        
-    method <- match.arg(method)
-    
-    tagged <- admisc::has_tag(x)
-
-    ix <- seq_along(x)
-
-    truena <- ix[is.na(x) & !tagged]
-    itagged <- c()
-
-    if (is_mixed(x)) {
-        x <- unmix(x)
-    }
-    attributes(x) <- NULL
-
-    if (any(tagged)) {
-        itagged <- ix[tagged][order(x[tagged], decreasing = decreasing, method = method)]
-    }
-
-    ix <- ix[!(is.na(x) | tagged)]
-    x <- x[!(is.na(x) | tagged)]
-    
-
-    res <- c()
-    if (!na.last) {
-        res <- truena
-    }
-
-    if (!na_values.last) {
-        res <- c(res, itagged)
-    }
-    
-    res <- c(res, ix[order(x, decreasing = decreasing, method = method)])
-    
-    if (na_values.last) {
-        res <- c(res, itagged)
-    }
-    
-    if (na.last) {
-        res <- c(res, truena)
-    }
-
-    return(res)
-}
-
-
-`sort_tagged` <- function(x, decreasing = FALSE, na.last = TRUE,
-                           na_values.last = TRUE) {
-    x[order_tagged(
-        x,
-        decreasing = decreasing,
-        na.last = na.last,
-        na_values.last = na_values.last
-    )]
 }

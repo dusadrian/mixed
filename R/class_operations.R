@@ -1,42 +1,46 @@
-`==.mixed_labelled` <- function(e1, e2) {
-    e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_equal(e1, e2)
+`get_labeltext` <- function(x, prefix=": ") {
+    label = attr(x, "label", exact = TRUE)
+    if(!is.null(label)) {
+        paste0(prefix, label)
+    }
 }
 
-`!=.mixed_labelled` <- function(e1, e2) {
-    e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    !vec_equal(e1, e2)
+`==.haven_labelled` <- function(e1, e2) {
+    if (is.character(e2) && !all(has_tag(e2))) {
+        return(logical(length(e1)))
+    }
+
+    return(unclass(untag(e1)) == unclass(untag(e2)))
 }
 
-`anyDuplicated.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
-    vec_duplicate_any(unmix(x))
+`!=.haven_labelled` <- function(e1, e2) {
+    if (is.character(e2) && !all(has_tag(e2))) {
+        return(logical(length(e1)))
+    }
+
+    return(unclass(untag(e1)) != unclass(untag(e2)))
 }
 
-`duplicated.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
+`anyDuplicated.haven_labelled` <- function(x, incomparables = FALSE, ...) {
+    vec_duplicate_any(untag(x))
+}
+
+`duplicated.haven_labelled` <- function(x, incomparables = FALSE, ...) {
     #--------
     # either
-    x <- unmix(x)
+    x <- unclass(untag(x))
     NextMethod()
 
     #--------
     # or
-    # vec_duplicate_id(unmix(x)) != seq_along(x)
+    # vec_duplicate_id(untag(x)) != seq_along(x)
 }
 
-`duplicated.haven_labelled` <- function(x, incomparables = FALSE, ...) {
-    duplicates <- logical(length(x))
-    tagged <- admisc::has_tag(x)
-
-    ix <- seq_along(x)
-    if (any(tagged)) {
-        duplicates[ix[tagged][duplicated(admisc::get_tag(x[tagged]))]] <- TRUE
-    }
-
-    duplicates[ix[!tagged][duplicated(unclass(x[!tagged]))]] <- TRUE
-
-    return(duplicates)
+`duplicated.tagged` <- function(x, incomparables = FALSE, ...) {
+    #--------
+    # either
+    x <- unclass(untag(x))
+    NextMethod()
 }
 
 `unique.haven_labelled` <- function(x, incomparables = FALSE, ...) {
@@ -50,150 +54,63 @@
     return(x)
 }
 
-`<=.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_compare(e1, e2) <= 0
-}
-
-`<.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_compare(e1, e2) < 0
-}
-
-`>=.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_compare(e1, e2) >= 0
-}
-
-`>.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_compare(e1, e2) > 0
-}
-
-`+.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    if (missing(e2)) {
-        vec_arith("+", e1, MISSING())
-    } else {
-        vec_arith("+", e1, e2)
-    }
-}
-
-`-.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    if (missing(e2)) {
-        vec_arith("-", e1, MISSING())
-    } else {
-        vec_arith("-", e1, e2)
-    }
-}
-
-`*.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_arith("*", e1, e2)
-}
-
-`/.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_arith("/", e1, e2)
-}
-
-`^.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_arith("^", e1, e2)
-}
-
-`%%.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_arith("%%", e1, e2)
-}
-
-`%/%.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_arith("%/%", e1, e2)
-}
-
-`!.mixed_labelled` <- function(x) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_arith("!", x, MISSING())
-}
-
-`&.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_arith("&", e1, e2)
-}
-
-`|.mixed_labelled` <- function(e1, e2) {
-    if (is_mixed(e1)) e1 <- unmix(e1)
-    if (is_mixed(e2)) e2 <- unmix(e2)
-    vec_arith("|", e1, e2)
-}
-
-`[<-.mixed_labelled` <- function(x, i, value) {
-    na_values <- attr(x, "na_values", exact = TRUE)
+`unique.tagged` <- function(x, incomparables = FALSE, ...) {
     
-    if (any(is.element(value, na_values))) {
-        valmatch <- match(value, na_values)
-        tagged_values <- attr(x, "tagged_values", exact = TRUE)
-        if (!is.null(tagged_values)) {
-            el <- is.element(na_values, tagged_values)
-            na_values[el] <- names(tagged_values)[match(na_values[el], tagged_values)]
-        }
+    x <- x[!duplicated(x)]
+    oa <- list(...)
+    if (is.element("sort", names(oa)) && oa$sort) {
+        return(sort_tagged(x, ... = ...))
+    }
 
-        value[!is.na(valmatch)] <- admisc::tag_na(na_values[valmatch[!is.na(valmatch)]])
+    return(x)
+}
+
+`sort.tagged` <- function(x, decreasing = FALSE, na.last = NA, ...) {
+    return(sort_tagged(x, decreasing, na.last, ...))
+}
+
+`<=.haven_labelled` <- function(e1, e2) {
+    return(unclass(untag(e1)) <= unclass(untag(e2)))
+}
+
+`<.haven_labelled` <- function(e1, e2) {
+    return(unclass(untag(e1)) < unclass(untag(e2)))
+}
+
+`>=.haven_labelled` <- function(e1, e2) {
+    return(unclass(untag(e1)) >= unclass(untag(e2)))
+}
+
+`>.haven_labelled` <- function(e1, e2) {
+    return(unclass(untag(e1)) > unclass(untag(e2)))
+}
+
+`[<-.haven_labelled` <- function(x, i, value) {
+    tagged <- has_tag(x)
+    if (any(tagged)) {
+        isel <- is.element(value, get_tag(x[tagged]))
+        if (any(isel)) {
+            value[isel] <- tag(value[isel])
+        }
     }
 
     NextMethod()
 }
 
-`mean.mixed_labelled` <- function(x, ...) {
-    x <- unmix(x)
-    
-    na_values <- attr(x, "na_values", exact = TRUE)
-    x <- x[!admisc::isElement(x, na_values)]
-    
-    na_range <- attr(x, "na_range", exact = TRUE)
-    if (!is.null(na_range)) {
-        x <- x[x < na_range[1] | x > na_range[2]]
-    }
+`mean.haven_labelled` <- function(x, ...) {
+    x <- x[!has_tag(x)]
 
     mean(unclass(x), ...)
 }
 
-`median.mixed_labelled` <- function(x, na.rm = TRUE, ...) {
-    x <- unmix(x)
-
-    NextMethod()
-}
-
-`c.mixed_labelled` <- function(..., recursive = FALSE, use.names = TRUE) {
-    cargs <- list(...)
-
-    checks <- lapply(cargs, function(x) {
-        if (!is_mixed(x) && is.double(x)) {
-            if (any(admisc::has_tag(x))) {
-                cat("\n")
-                stop(simpleError("Declared and tagged missing values should not be mixed.\n\n"))
-            }
-        }
-    })
+`c_mixed_labelled` <- function(cargs, recursive = FALSE, use.names = TRUE) {
+    # cargs <- list(...)
 
     na_values <- sort(unique(unlist(lapply(cargs, function(x) attr(x, "na_values", exact = TRUE)))))
+    labels <- unlist(lapply(cargs, function(x) {
+        untag(attr(x, "labels", exact = TRUE))
+    }))
     
-    labels <- unlist(lapply(cargs, function(x) attr(x, "labels", exact = TRUE)))
     duplicates <- duplicated(labels)
 
     if (length(wduplicates <- which(duplicates)) > 0) {
@@ -252,38 +169,36 @@
     }
 
     cargs <- unlist(lapply(cargs, function(x) {
-        if (is_mixed(x)) x <- unmix(x)
+        if (is_mixed(x) | inherits(x, "tagged")) x <- untag(x)
         attributes(x) <- NULL
         return(x)
     }))
 
-    label <- attr(cargs[[1]], "label", exact = TRUE)
-
-    new_mixed_labelled(
+    mixed_labelled(
         vec_data(cargs),
         labels = labels,
         na_values = na_values,
         na_range = na_range,
-        label = label
+        label = attr(cargs[[1]], "label", exact = TRUE)
     )
 }
 
 `cbind.mixed_labelled` <- function(..., deparse.level = 1) {
-    cargs <- lapply(list(...), unmix)
+    cargs <- lapply(list(...), untag)
     cargs$deparse.level <- deparse.level
     do.call("cbind", cargs)
 }
 
 `as_factor.mixed_labelled` <- function(x, ..., only_labelled = TRUE) {
     oa <- list(...)
-    if (is.element("unmix", names(oa)) && is.logical(oa$unmix)) {
-        if (oa$unmix[1]) { # to prevent an accidental logical vector
-            x <- unmix(x)
+    if (is.element("untag", names(oa)) && is.logical(oa$untag)) {
+        if (oa$untag[1]) { # to prevent an accidental logical vector
+            x <- untag(x)
         }
     }
     else {
-        # unmix by default
-        x <- unmix(x)
+        # untag by default
+        x <- untag(x)
     }
     
     NextMethod()
@@ -297,45 +212,39 @@
     paste0("mixed_labelled<", vec_ptype_full(vec_data(x)), ">")
 }
 
-`obj_print_header.mixed_labelled` <- function(x, ...) {
-    if (!inherits(x, "noprint")) {
-        cat(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
-    }
-    invisible(x)
-}
+# `obj_print_header.mixed_labelled` <- function(x, ...) {
+#     if (!inherits(x, "noprint")) {
+#         cat(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
+#     }
+#     invisible(x)
+# }
 
-`obj_print_footer.mixed_labelled` <- function(x, ...) {
-    if (!inherits(x, "noprint")) {
-        na_values <- attr(x, "na_values")
-        if (!is.null(na_values)) {
-            cat(paste0("Missing values: ", paste(na_values, collapse = ", "), "\n"))
-        }
+# `obj_print_footer.mixed_labelled` <- function(x, ...) {
+#     if (!inherits(x, "noprint")) {
+#         na_values <- attr(x, "na_values")
+#         if (!is.null(na_values)) {
+#             cat(paste0("Missing values: ", paste(na_values, collapse = ", "), "\n"))
+#         }
 
-        na_range <- attr(x, "na_range")
-        if (!is.null(na_range)) {
-            cat(paste0("Missing range: [", paste(na_range, collapse = ", "), "]\n"))
-        }
+#         na_range <- attr(x, "na_range")
+#         if (!is.null(na_range)) {
+#             cat(paste0("Missing range: [", paste(na_range, collapse = ", "), "]\n"))
+#         }
         
-        haven::print_labels(unmix(x))
-    }
-}
+#         haven::print_labels(x)
+#     }
+# }
 
-`obj_print_data.mixed_labelled` <- function(x, ...) {
-    if (length(x) == 0) {
-        return(invisible(x))
-    }
+# `obj_print_data.mixed_labelled` <- function(x, ...) {
+#     if (length(x) == 0) {
+#         return(invisible(x))
+#     }
     
-    x <- unmix(x)
-    
-    out <- stats::setNames(format(x), names(x))
-    print(out, quote = FALSE)
+#     out <- stats::setNames(format(x), names(x))
+#     print(out, quote = FALSE)
 
-    invisible(x)
-}
-
-`format.mixed_labelled` <- function(x, ..., digits = getOption("digits")) {
-    format(vec_data(unmix(x)), ...)
-}
+#     invisible(x)
+# }
 
 
 #----------------------------------------------
@@ -343,8 +252,8 @@
 
 
 `drop_unused_value_labels.mixed_labelled` <- function(x) {
-    labels <- unmix(attr(x, "labels", exact = TRUE))
-    attr(x, "labels") <- as_mixed(labels[is.element(labels, unique(unmix(x)))])
+    labels <- untag(attr(x, "labels", exact = TRUE))
+    attr(x, "labels") <- as_mixed(labels[is.element(labels, unique(untag(x)))])
     return(x)
 }
 

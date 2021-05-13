@@ -1,6 +1,6 @@
 Package: mixed
-Version: 0.5
-Date: 2021-04-18
+Version: 0.7
+Date: 2021-05-13
 Title: Mixed labelled data
 Authors@R: person(given = "Adrian", family = "Dusa",
                   role = c("aut", "cre", "cph"),
@@ -9,9 +9,7 @@ Authors@R: person(given = "Adrian", family = "Dusa",
 Depends: R (>= 3.5.0)
 License: GPL (>= 3)
 LazyData: yes
-Imports: admisc (>= 0.15), vctrs, haven (>= 2.3.1)
-Suggests: labelled
-Remotes: github::dusadrian/admisc
+Imports: vctrs, haven (>= 2.4.0), labelled
 Description: A package that extend the "haven_labelled" class introduced in package 'haven',
     to deal with mixed labelled objects where existing values that are defined as missing
     are treated as both real and missing values, at the same time.
