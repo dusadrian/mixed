@@ -184,11 +184,11 @@ SEXP _get_tag(SEXP x) {
             SET_STRING_ELT(out, i, NA_STRING);
         }
         else {
-            
+            int nchars = 1;
             ieee_double y;
             y.value = xi;
-            Rboolean minus = signbit(xi);
             
+            // allocate sufficient bytes to accommodate a two digit number plus a sign
             char test[24];
 
             test[0] = y.byte[TAG_BYTE];
@@ -198,27 +198,32 @@ SEXP _get_tag(SEXP x) {
             }
             else {
                 Rboolean digit = true;
+
+                // test if the first tagged character is a digit
                 digit = digit && test[0] >= '0' && test[0] <= '9';
 
                 char tag2 = y.byte[(TAG_BYTE == 4) ? 5 : 2];
-                int nchars = 1 + (strlen(&tag2) > 0);
+                nchars += 1 * (strlen(&tag2) > 0);
 
                 if (nchars == 2) {
+                    // test if the second tagged character is a digit
                     digit = digit && tag2 >= '0' && tag2 <= '9';
                 }
                 
                 test[1] = tag2;
 
-                if (digit) {
+                if (digit) { // the tagged string is a number
+
                     // transform the string into an integer
                     int number = 0;
                     int i = 0;
                     
-                    while (test[i] && (test[i] >= '0' && test[i] <= '9')){
+                    while (test[i] && (test[i] >= '0' && test[i] <= '9')) {
                         number = number * 10 + (test[i] - '0');
                         i++;
                     }
                     
+                    Rboolean minus = signbit(xi);
                     if (minus) {
                         number *= -1;
                         nchars += 1;
