@@ -35,6 +35,7 @@
         
         env$c <- function(..., recursive = FALSE, use.names = TRUE) {
             dots <- list(...)
+            
             atomic <- unlist(lapply(dots, is.atomic))
             
             if (all(atomic)) {
@@ -58,7 +59,8 @@
                         }
 
                         tags <- tag(tag_values)
-
+                        nms <- attr(unlist(dots), "names")
+                        
                         dots[ltagged] <- lapply(dots[ltagged], function(x) {
                             for (i in seq(length(tag_values))) {
                                 x[has_tag(x, tag_values[i])] <- unclass(tags[i])
@@ -68,6 +70,9 @@
 
                         dots <- unlist(dots)
                         attributes(dots) <- attributes(tags)
+                        if (!is.null(nms)) {
+                            attr(dots, "names") <- nms
+                        }
                         
                         return(dots)
                     }
@@ -264,11 +269,11 @@
             get_tag(x)
         }
 
-        # do.call("unlockBinding", list(sym = "labelled", env = env))
+        do.call("unlockBinding", list(sym = "labelled", env = env))
 
-        # env$labelled <- function(x = double(), labels = NULL, label = NULL, ...) {
-        #     mixed_labelled(x, labels, label, ...)
-        # }
+        env$labelled <- function(x = double(), labels = NULL, label = NULL) {
+            haven::labelled(x, vec_data(labels), label)
+        }
         
     }
 

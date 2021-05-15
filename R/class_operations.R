@@ -103,11 +103,11 @@
     mean(unclass(x), ...)
 }
 
-`c_mixed_labelled` <- function(cargs, recursive = FALSE, use.names = TRUE) {
-    # cargs <- list(...)
-
-    na_values <- sort(unique(unlist(lapply(cargs, function(x) attr(x, "na_values", exact = TRUE)))))
-    labels <- unlist(lapply(cargs, function(x) {
+`c_mixed_labelled` <- function(dots, recursive = FALSE, use.names = TRUE) {
+    # dots <- list(...)
+    mixed <- unlist(lapply(dots, is_mixed))
+    na_values <- sort(unique(unlist(lapply(dots, function(x) attr(x, "na_values", exact = TRUE)))))
+    labels <- unlist(lapply(dots, function(x) {
         untag(attr(x, "labels", exact = TRUE))
     }))
     
@@ -124,7 +124,7 @@
 
     labels <- sort(labels[!duplicates])
 
-    na_range <- lapply(cargs, function(x) attr(x, "na_range", exact = TRUE))
+    na_range <- lapply(dots, function(x) attr(x, "na_range", exact = TRUE))
     nulls <- unlist(lapply(na_range, is.null))
     
     if (all(nulls)) {
@@ -168,18 +168,18 @@
         }
     }
 
-    cargs <- unlist(lapply(cargs, function(x) {
+    dots <- unlist(lapply(dots, function(x) {
         if (is_mixed(x) | inherits(x, "tagged")) x <- untag(x)
         attributes(x) <- NULL
         return(x)
     }))
 
     mixed_labelled(
-        vec_data(cargs),
+        vec_data(dots),
         labels = labels,
         na_values = na_values,
         na_range = na_range,
-        label = attr(cargs[[1]], "label", exact = TRUE)
+        label = attr(dots[[which(mixed)[1]]], "label", exact = TRUE)
     )
 }
 

@@ -131,7 +131,7 @@
     }
 
     if (inherits(x, "mixed_labelled")) {
-        x <- untag(x)
+        x <- unmix(x)
     }
     
     labels <- attr(x, "labels", exact = TRUE)

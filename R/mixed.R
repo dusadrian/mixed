@@ -6,6 +6,7 @@
 `values_to_tag` <- function(x) {
     na_values <- attr(x, "na_values")
     na_range <- attr(x, "na_range")
+    labels <- attr(x, "labels", exact = TRUE)
     misvals <- c()
 
     if (is.null(na_values) & is.null(na_range)) {
@@ -15,6 +16,8 @@
     if (!is.null(na_values)) {
         misvals <- sort(na_values)
     }
+
+    x <- c(x, unname(unclass(labels)))
 
     if (!is.null(na_range)) {
         uniques <- sort(unique(x[x >= na_range[1] & x <= na_range[2]]))
@@ -79,6 +82,7 @@
     }
 
     if (!is.null(labels)) {
+        
         if (length(tagged_values$justright) > 0) {
             labels[is.element(labels, tagged_values$justright)] <- tag(labels[is.element(labels, tagged_values$justright)])
         }
@@ -92,6 +96,7 @@
         # attr(x, "labels")
 
         class(labels) <- c("mixed_labelled", "haven_labelled", "vctrs_vctr", "noprint", class(labels))
+        
         attrx$labels <- labels
     }
 
@@ -106,7 +111,7 @@
         labelled <- vapply(x, is.labelled, logical(1))
         x[labelled] <- lapply(x[labelled], as_mixed, ...)
     } else {
-        x[] <- lapply(x, as_mixed)
+        x[] <- lapply(x, as_mixed, ...)
     }
 
     return(x)
@@ -123,54 +128,32 @@
 `unmix.mixed_labelled` <- function(x) {
     # `unmx` <- function(x) {
     attrx <- attributes(x)
-    
     tagged <- has_tag(x)
-    undeclared <- FALSE
+    
     
     if (any(tagged)) {
-        tags <- get_tag(x[tagged])
-        na_values <- attr(x, "na_values")
-        na_range <- attr(x, "na_range")
-
-        if (is.character(tags)) {
-            undeclared <- TRUE
-        }
-        else if (!is.null(na_values) || !is.null(na_range)) {
-            invalues <- is.element(tags, na_values)
-            
-            if (!is.null(na_range)) {
-                invalues <- invalues | (tags >= na_range[1] & tags <= na_range[2])
-            }
-
-            if (all(invalues)) {
-                attributes(x) <- NULL
-                x[tagged] <- tags
-            }
-            else {
-                undeclared <- TRUE
-            }
-        }
+        x[tagged] <- tags
     }
 
-    if (undeclared) {
-        cat("\n")
-        stop("There should not be undeclared missing values into a mixed labelled object.\n\n", call. = FALSE)
-    }
-
-    # ------------------
-    # the unclass part is VERY important to stay here, BEFORE replacing the values in the labels
-    # because of my the choice to automatically transform any (actual) value into a tagged NA
-    # when adding (and the same happens when replacing) values into a mixed_labelled object
-    labels <- unclass(attrx$labels)
+    labels <- attrx$labels
     
     # ------------------
     if (!is.null(labels)) {
+        nms <- names(labels)
+
+        # ------------------
+        # the unclass part is VERY important to stay here, BEFORE replacing the values in the labels
+        # because of my the choice to automatically transform any (actual) value into a tagged NA
+        # when adding (and the same happens when replacing) values into a mixed_labelled object
+        labels <- unclass(labels)
+        
         tagged <- has_tag(labels)
         
         if (any(tagged)) {
             labels[tagged] <- get_tag(labels[tagged])
         }
 
+        names(labels) <- nms
         attr(labels, "large_numbers") <- NULL # just in case
         attrx$labels <- labels
     }
@@ -252,11 +235,11 @@
         }
     }
     
-    oa <- list(...)
+    dots <- list(...)
     if (!is.null(labels)) {
-        if (is.element("large_numbers", names(oa))) {
-            if (length(oa$large_numbers) > 0) {
-                attr(labels, "large_numbers") <- oa$large_numbers
+        if (is.element("large_numbers", names(dots))) {
+            if (length(dots$large_numbers) > 0) {
+                attr(labels, "large_numbers") <- dots$large_numbers
             }
         }
     }
@@ -276,16 +259,28 @@
                           na_range = NULL, label = NULL, ...) {
 
     x <- vec_data(x)
-    labels <- stats::setNames(vec_cast(labels, x, x_arg = "labels", to_arg = "x"), names(labels))
+    if (inherits(labels, "tagged")) {
+        if (is.character(untag(labels))) {
+            cat("\n")
+            stop(simpleError("Tagged values in `labels` have to be numeric.\n\n"))
+        }
+    }
+
+    labels <- stats::setNames(vec_cast(vec_data(labels), x, x_arg = "labels", to_arg = "x"), names(labels))
     validate_labelled(x, labels, label, na_values, na_range)
 
     if (is.null(na_values) && is.null(na_range)) {
-        return(new_labelled( x, labels = labels, label = label))
+        return(new_labelled(x, labels = labels, label = label))
     }
 
-    oa <- list(...)
+    dots <- list(...)
     declared <- logical(length(x))
     tagged <- has_tag(x)
+
+    if (is.character(na_values) || any(is.na(na_values))) {
+        cat("\n")
+        stop(simpleError("`na_values` has to be numeric.\n\n"))
+    }
     
     if (!is.null(na_values) || !is.null(na_range)) {
         if (any(tagged)) {
@@ -298,8 +293,8 @@
                 tags <- tags[-which(numeric)[numtags >= na_range[1] & numtags <= na_range[2]]]
             }
             
-            if (length(tags) > 0 && is.element("large_numbers", names(oa))) {
-                tags <- setdiff(tags, names(oa$large_numbers))
+            if (length(tags) > 0 && is.element("large_numbers", names(dots))) {
+                tags <- setdiff(tags, names(dots$large_numbers))
             }
 
             if (length(tags) > 0) {
@@ -390,3 +385,8 @@
         class = "mixed_labelled"
     )
 }
+
+
+# wvs <- readRDS("Downloads/World Values Survey 2012/WVS2012.rds")
+# wvs <- as_mixed(wvs)
+# wvs$V6
