@@ -37,8 +37,6 @@
 }
 
 `duplicated.tagged` <- function(x, incomparables = FALSE, ...) {
-    #--------
-    # either
     x <- unclass(untag(x))
     NextMethod()
 }
@@ -46,8 +44,8 @@
 `unique.haven_labelled` <- function(x, incomparables = FALSE, ...) {
     
     x <- x[!duplicated(x)]
-    oa <- list(...)
-    if (is.element("sort", names(oa)) && oa$sort) {
+    dots <- list(...)
+    if (is.element("sort", names(dots)) && dots$sort) {
         return(sort_labelled(x, ... = ...))
     }
 
@@ -57,8 +55,8 @@
 `unique.tagged` <- function(x, incomparables = FALSE, ...) {
     
     x <- x[!duplicated(x)]
-    oa <- list(...)
-    if (is.element("sort", names(oa)) && oa$sort) {
+    dots <- list(...)
+    if (is.element("sort", names(dots)) && dots$sort) {
         return(sort_tagged(x, ... = ...))
     }
 
@@ -190,9 +188,9 @@
 }
 
 `as_factor.mixed_labelled` <- function(x, ..., only_labelled = TRUE) {
-    oa <- list(...)
-    if (is.element("untag", names(oa)) && is.logical(oa$untag)) {
-        if (oa$untag[1]) { # to prevent an accidental logical vector
+    dots <- list(...)
+    if (is.element("untag", names(dots)) && is.logical(dots$untag)) {
+        if (dots$untag[1]) { # to prevent an accidental logical vector
             x <- untag(x)
         }
     }
@@ -211,44 +209,6 @@
 `vec_ptype_full.mixed_labelled` <- function(x, ...) {
     paste0("mixed_labelled<", vec_ptype_full(vec_data(x)), ">")
 }
-
-# `obj_print_header.mixed_labelled` <- function(x, ...) {
-#     if (!inherits(x, "noprint")) {
-#         cat(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
-#     }
-#     invisible(x)
-# }
-
-# `obj_print_footer.mixed_labelled` <- function(x, ...) {
-#     if (!inherits(x, "noprint")) {
-#         na_values <- attr(x, "na_values")
-#         if (!is.null(na_values)) {
-#             cat(paste0("Missing values: ", paste(na_values, collapse = ", "), "\n"))
-#         }
-
-#         na_range <- attr(x, "na_range")
-#         if (!is.null(na_range)) {
-#             cat(paste0("Missing range: [", paste(na_range, collapse = ", "), "]\n"))
-#         }
-        
-#         haven::print_labels(x)
-#     }
-# }
-
-# `obj_print_data.mixed_labelled` <- function(x, ...) {
-#     if (length(x) == 0) {
-#         return(invisible(x))
-#     }
-    
-#     out <- stats::setNames(format(x), names(x))
-#     print(out, quote = FALSE)
-
-#     invisible(x)
-# }
-
-
-#----------------------------------------------
-# to propose adding to package labelled
 
 
 `drop_unused_value_labels.mixed_labelled` <- function(x) {
