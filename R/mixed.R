@@ -94,8 +94,10 @@
 
         # add these classes to allow printing tagged NA values when typing:
         # attr(x, "labels")
-
-        class(labels) <- c("mixed_labelled", "haven_labelled", "vctrs_vctr", "noprint", class(labels))
+        
+        if (any(has_tag(labels))) {
+            class(labels) <- c("tagged", "vctrs_vctr", class(labels))
+        }
         
         attrx$labels <- labels
     }
@@ -129,31 +131,28 @@
     # `unmx` <- function(x) {
     attrx <- attributes(x)
     tagged <- has_tag(x)
-    
+    attributes(x) <- NULL
     
     if (any(tagged)) {
-        x[tagged] <- tags
+        x[tagged] <- get_tag(x[tagged])
     }
 
     labels <- attrx$labels
     
     # ------------------
     if (!is.null(labels)) {
-        nms <- names(labels)
+        tagged <- has_tag(labels)
 
         # ------------------
-        # the unclass part is VERY important to stay here, BEFORE replacing the values in the labels
-        # because of my the choice to automatically transform any (actual) value into a tagged NA
-        # when adding (and the same happens when replacing) values into a mixed_labelled object
-        labels <- unclass(labels)
-        
-        tagged <- has_tag(labels)
+        # the vec_data() part is VERY important to stay here, BEFORE replacing the values in the
+        # labels because of my the choice to automatically transform any (actual) value into a 
+        # tagged NA when adding (and the same happens when replacing) values into this object
+        labels <- vec_data(labels)
         
         if (any(tagged)) {
             labels[tagged] <- get_tag(labels[tagged])
         }
 
-        names(labels) <- nms
         attr(labels, "large_numbers") <- NULL # just in case
         attrx$labels <- labels
     }
@@ -371,7 +370,9 @@
             # add these classes to allow printing tagged NA values when typing, for instance:
             # attr(x, "labels")
 
-            class(labels) <- c("mixed_labelled", "haven_labelled", "vctrs_vctr", "noprint", class(labels))
+            if (any(has_tag(labels))) {
+                class(labels) <- c("tagged", "vctrs_vctr", class(labels))
+            }
         }
     }
     

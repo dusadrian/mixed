@@ -122,41 +122,39 @@
             ns = "haven"
         ))
 
-        do.call("assignInNamespace", list(
-            x = "obj_print_header.haven_labelled",
-            value = function(x, ...) {
-                if (!inherits(x, "noprint")) {
-                    do.call("cat",
-                        list(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
-                    )
-                }
-                invisible(x)
-            },
-            ns = "haven"
-        ))
+        # do.call("assignInNamespace", list(
+        #     x = "obj_print_header.haven_labelled",
+        #     value = function(x, ...) {
+        #         if (!inherits(x, "noprint")) {
+        #             do.call("cat",
+        #                 list(paste0("<", vec_ptype_full(x), "[", vec_size(x), "]>", get_labeltext(x), "\n"))
+        #             )
+        #         }
+        #         invisible(x)
+        #     },
+        #     ns = "haven"
+        # ))
 
         do.call("assignInNamespace", list(
             x = "obj_print_footer.haven_labelled",
             value = function(x, ...) {
-                if (!inherits(x, "noprint")) {
-                    if (!inherits(x, "haven_labelled_spss")) {
-                        na_values <- attr(x, "na_values")
-                        if (!is.null(na_values)) {
-                            do.call("cat",
-                                list(paste0("Missing values: ", paste(na_values, collapse = ", "), "\n"))
-                            )
-                        }
-
-                        na_range <- attr(x, "na_range")
-                        if (!is.null(na_range)) {
-                            do.call("cat",
-                                list(paste0("Missing range: [", paste(na_range, collapse = ", "), "]\n"))
-                            )
-                        }
+                if (!inherits(x, "haven_labelled_spss")) {
+                    na_values <- attr(x, "na_values")
+                    if (!is.null(na_values)) {
+                        do.call("cat",
+                            list(paste0("Missing values: ", paste(na_values, collapse = ", "), "\n"))
+                        )
                     }
-        
-                    print_labels(x)
+
+                    na_range <- attr(x, "na_range")
+                    if (!is.null(na_range)) {
+                        do.call("cat",
+                            list(paste0("Missing range: [", paste(na_range, collapse = ", "), "]\n"))
+                        )
+                    }
                 }
+    
+                print_labels(x)
                 invisible(x)
             },
             ns = "haven"
