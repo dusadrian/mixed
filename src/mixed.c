@@ -187,29 +187,51 @@ SEXP _get_tag(SEXP x) {
             
             ieee_double y;
             y.value = xi;
-
-            Rboolean firstminus = signbit(xi);
+            Rboolean minus = signbit(xi);
             
-            char test[16 + 8 * firstminus];
-            if (firstminus) {
-                test[0] = CHAR(mkChar("-"))[0];
-            }
+            char test[24];
 
-            test[firstminus] = y.byte[TAG_BYTE];
+            test[0] = y.byte[TAG_BYTE];
 
             if (test[0] == '\0') {
                 SET_STRING_ELT(out, i, NA_STRING);
             }
             else {
+                Rboolean digit = true;
+                digit = digit && test[0] >= '0' && test[0] <= '9';
+
                 char tag2 = y.byte[(TAG_BYTE == 4) ? 5 : 2];
-                int nchars = 1 + (strlen(&tag2) > 0) + firstminus;
+                int nchars = 1 + (strlen(&tag2) > 0);
+
+                if (nchars == 2) {
+                    digit = digit && tag2 >= '0' && tag2 <= '9';
+                }
                 
-                test[firstminus + 1] = tag2;
+                test[1] = tag2;
+
+                if (digit) {
+                    // transform the string into an integer
+                    int number = 0;
+                    int i = 0;
+                    
+                    while (test[i] && (test[i] >= '0' && test[i] <= '9')){
+                        number = number * 10 + (test[i] - '0');
+                        i++;
+                    }
+                    
+                    if (minus) {
+                        number *= -1;
+                        nchars += 1;
+                    }
+
+                    // and make it back a string, but this time with a sign (if any)
+                    sprintf(test, "%d", number);
+                }
+
                 SET_STRING_ELT(out, i, Rf_mkCharLenCE(test, nchars, CE_UTF8));
             }
         }
     }
-
 
     UNPROTECT(1);
     return out;
