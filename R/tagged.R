@@ -1,10 +1,3 @@
-# `tag<-` <- function(x, value = NULL) {
-#     checkTag(value)
-#     x <- rep(.Call("C_tagged_na", value, PACKAGE = "mixed"), length(x))
-# }
-
-
-
 `tag` <- function(...) {
     x <- as.character(c(...))
     morethan2 <- nchar(gsub("-", "", x)) > 2 & unlist(lapply(x, possibleNumeric))
@@ -95,7 +88,7 @@
     return(result)
 }
 
-# is a string representing a tagged NA such as ".a" or "NA(a)"?
+# is a string representing a tagged NA such as "NA(a)"?
 `is_tagged_string` <- function(x) {
     if (!is.character(x)) {
         return(logical(length(x)))
@@ -104,13 +97,9 @@
     return(startsWith(x, "NA(") & endsWith(x, ")"))
 }
 
-
-
-
 `format.tagged` <- function(x, ..., digits = getOption("digits")) {
     format_tagged(x, digits = digits)
 }
-
 
 `format_tagged` <- function(x, digits = getOption("digits")) {
     if (!is.atomic(x)) {
@@ -164,9 +153,6 @@
     return(x)
 }
 
-
-
-
 `order_tagged` <- function(x, na.last = NA, decreasing = FALSE, method = c("auto", "shell", "radix"),
     na_values.last = NA) {
         
@@ -208,8 +194,6 @@
 
     return(res)
 }
-
-
 
 `sort_tagged` <- function(x, decreasing = FALSE, na.last = NA,
                            na_values.last = NA, ...) {
