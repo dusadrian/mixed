@@ -61,10 +61,7 @@
         return(logical(length(x)))
     }
     
-    # for some reason (TODO: investigate), despite the result being a logical vector
-    # it doesn't behave like a regular logical vector (i.e. which(result) doesn't work)
-    result <- .Call("_has_tag", x, tag, PACKAGE = "mixed")
-    return(unlist(lapply(result, isTRUE)))
+    return(.Call("_has_tag", x, tag, PACKAGE = "mixed"))
 }
 
 `get_tag` <- function(x) {

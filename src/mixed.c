@@ -168,6 +168,10 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
     int n = Rf_length(x);
     SEXP out = PROTECT(Rf_allocVector(LGLSXP, n));
 
+    for (int i = 0; i < n; ++i) {
+        LOGICAL(out)[i] = 1; // initialize
+    }
+    
     if (TYPEOF(x) != REALSXP) {
         for (int i = 0; i < n; ++i) {
             LOGICAL(out)[i] = 0;
@@ -176,7 +180,6 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
     else {
         for (int i = 0; i < n; ++i) {
             double xi = REAL(x)[i];
-            LOGICAL(out)[i] = 1;
 
             if (!isnan(xi)) {
                 LOGICAL(out)[i] = 0;
@@ -206,7 +209,7 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
                         Rboolean tag_minus = CHAR(STRING_ELT(tag_, 0))[0] == CHAR(mkChar("-"))[0];
                         Rboolean xi_minus = signbit(xi);
                         
-                        LOGICAL(out)[i] = 1 * ((1 * tag_minus + 1 * xi_minus) != 1);
+                        LOGICAL(out)[i] = ((1 * tag_minus + 1 * xi_minus) != 1);
 
                         if (LOGICAL(out)[i]) {
                             int nchars = Rf_length(STRING_ELT(tag_, 0));
@@ -228,7 +231,7 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
                                 Rf_errorcall(R_NilValue, "`tag` number too large, use the R function has_tag()");
                             }
 
-                            LOGICAL(out)[i] = 1 * ((1 * xi_numeric + 1 * tag_numeric) != 1);
+                            LOGICAL(out)[i] = ((1 * xi_numeric + 1 * tag_numeric) != 1);
 
                             if (LOGICAL(out)[i]) {
                                 Rboolean test = TRUE;
@@ -256,9 +259,7 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
                                     }
                                 }
 
-                                if (test) {
-                                    LOGICAL(out)[i] = 1;
-                                }
+                                LOGICAL(out)[i] = test;
                             }
                         }
                     }
@@ -269,7 +270,7 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
             }
         }
     }
-
+    
     UNPROTECT(1);
     return out;
 }
