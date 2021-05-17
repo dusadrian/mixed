@@ -77,7 +77,7 @@ SEXP _tag(SEXP x) {
         
         int nchars = Rf_length(STRING_ELT(x, i));
         int number = 0;
-        Rboolean numeric = true;
+        Rboolean numeric = TRUE;
         Rboolean firstminus = CHAR(STRING_ELT(x, i))[0] == CHAR(mkChar("-"))[0];
 
         // int test;
@@ -91,8 +91,8 @@ SEXP _tag(SEXP x) {
                 number = number * 10 + charc;
             }
             else {
-                numeric = false;
-                firstminus = false;
+                numeric = FALSE;
+                firstminus = FALSE;
                 if (nchars > 2) {
                     nchars = 2;
                 }
@@ -176,10 +176,12 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
     else {
         for (int i = 0; i < n; ++i) {
             double xi = REAL(x)[i];
-            LOGICAL(out)[i] = isnan(xi);
-            
+            LOGICAL(out)[i] = 1;
 
-            if (LOGICAL(out)[i]) {
+            if (!isnan(xi)) {
+                LOGICAL(out)[i] = 0;
+            }
+            else {
                 
                 ieee_double y;
                 y.value = xi;
@@ -190,17 +192,13 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
                 char tag = y.byte[TAG_BYTE];
                 
                 if (TYPEOF(tag_) == NILSXP) {
-                    if (!xi_numeric && tag == '\0') {
-                        LOGICAL(out)[i] = false;
+                    if (!xi_numeric && (tag == '\0')) {
+                        LOGICAL(out)[i] = 0;
                     }
                 }
                 
                 else {
-                    if (TYPEOF(tag_) != STRSXP) {
-                        LOGICAL(out)[i] = false;
-                    }
-
-                    if (LOGICAL(out)[i]) {
+                    if (TYPEOF(tag_) == STRSXP) {
                         if (Rf_length(tag_) != 1) {
                             Rf_errorcall(R_NilValue, "`tag` should be a vector of length 1");
                         }
@@ -208,12 +206,12 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
                         Rboolean tag_minus = CHAR(STRING_ELT(tag_, 0))[0] == CHAR(mkChar("-"))[0];
                         Rboolean xi_minus = signbit(xi);
                         
-                        LOGICAL(out)[i] = tag_minus + xi_minus != 1;
+                        LOGICAL(out)[i] = 1 * ((1 * tag_minus + 1 * xi_minus) != 1);
 
                         if (LOGICAL(out)[i]) {
                             int nchars = Rf_length(STRING_ELT(tag_, 0));
                             int tag_number = 0;
-                            Rboolean tag_numeric = true;
+                            Rboolean tag_numeric = TRUE;
 
                             for (int c = tag_minus; c < nchars; c++) {
                                 int charc = CHAR(STRING_ELT(tag_, 0))[c] - '0';
@@ -221,7 +219,7 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
                                     tag_number = tag_number * 10 + charc;
                                 }
                                 else {
-                                    tag_numeric = false;
+                                    tag_numeric = FALSE;
                                 }
                             }
 
@@ -230,10 +228,10 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
                                 Rf_errorcall(R_NilValue, "`tag` number too large, use the R function has_tag()");
                             }
 
-                            LOGICAL(out)[i] = xi_numeric + tag_numeric != 1;
+                            LOGICAL(out)[i] = 1 * ((1 * xi_numeric + 1 * tag_numeric) != 1);
 
                             if (LOGICAL(out)[i]) {
-                                Rboolean test = true;
+                                Rboolean test = TRUE;
 
                                 if (xi_numeric) {
                                     int xi_number = 0;
@@ -258,9 +256,14 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
                                     }
                                 }
 
-                                LOGICAL(out)[i] = test;
+                                if (test) {
+                                    LOGICAL(out)[i] = 1;
+                                }
                             }
                         }
+                    }
+                    else {
+                        LOGICAL(out)[i] = 0;
                     }
                 }
             }

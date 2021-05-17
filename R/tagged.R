@@ -1,9 +1,9 @@
 `tag` <- function(...) {
     x <- as.character(c(...))
     ln <- logical(length(x))
-    pN <- unlist(lapply(x, possibleNumeric))
-    if (any(pN)) {
-        ln[pN] <- abs(asNumeric(x[pN])) > 32767
+    numbers <- unlist(lapply(x, possibleNumeric))
+    if (any(numbers)) {
+        ln[numbers] <- abs(asNumeric(x[numbers])) > 32767
     }
     
     
@@ -61,7 +61,10 @@
         return(logical(length(x)))
     }
     
-    return(.Call("_has_tag", x, tag, PACKAGE = "mixed"))
+    # for some reason (TODO: investigate), despite the result being a logical vector
+    # it doesn't behave like a regular logical vector (i.e. which(result) doesn't work)
+    result <- .Call("_has_tag", x, tag, PACKAGE = "mixed")
+    return(unlist(lapply(result, isTRUE)))
 }
 
 `get_tag` <- function(x) {
@@ -84,7 +87,7 @@
                 result[isel] <- unname(tv[match(result[isel], nms)])
             }
         }
-        
+
         forcenumeric <- attr(x, "numeric")
         if (is.null(forcenumeric)) {
             forcenumeric <- FALSE
@@ -125,7 +128,7 @@
     }
 
     # format again to make sure all elements have same width
-    format(out, justify = "right")
+    return(format(out, justify = "right"))
 }
 
 `print.tagged` <- function(x, ...) {

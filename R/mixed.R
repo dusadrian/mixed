@@ -32,8 +32,14 @@
         misvals <- sort(unique(c(misvals, uniques)))
     }
 
+    large_numbers <- logical(length(misvals))
+    numbers <- unlist(lapply(x, possibleNumeric))
+    if (any(numbers)) {
+        large_numbers[numbers] <- abs(asNumeric(misvals[numbers])) > 32767
+    }
+
     nchars <- nchar(abs(misvals))
-    result <- list(justright = misvals[nchars < 3], large_numbers = misvals[nchars > 2])
+    result <- list(justright = misvals[!large_numbers], large_numbers = misvals[large_numbers])
     
     if (length(result$large_numbers) > length(letters)) {
         cat("\n")
@@ -337,16 +343,21 @@
     
         declared <- sort(unique(x[declared]))
         
-        nchars <- nchar(abs(declared))
-        large_numbers <- declared[nchars > 2]
+        ln <- logical(length(declared))
+        pN <- unlist(lapply(declared, possibleNumeric))
+        if (any(pN)) {
+            ln[pN] <- abs(asNumeric(declared[pN])) > 32767
+        }
+
+        large_numbers <- declared[ln]
 
         if (length(large_numbers) > length(letters)) {
             cat("\n")
             stop(simpleError("Too many large missing values.\n\n"))
         }
 
-        if (length(declared[nchars < 3]) > 0) {
-            x[is.element(x, declared[nchars < 3])] <- tag(x[is.element(x, declared[nchars < 3])])
+        if (length(declared[!ln]) > 0) {
+            x[is.element(x, declared[!ln])] <- tag(x[is.element(x, declared[!ln])])
         }
 
         if (length(large_numbers) > 0) {
@@ -358,8 +369,8 @@
         }
 
         if (!is.null(labels)) {
-            if (length(declared[nchars < 3]) > 0) {
-                labels[is.element(labels, declared[nchars < 3])] <- tag(labels[is.element(labels, declared[nchars < 3])])
+            if (length(declared[!ln]) > 0) {
+                labels[is.element(labels, declared[!ln])] <- tag(labels[is.element(labels, declared[!ln])])
             }
 
             if (length(large_numbers) > 0) {
@@ -371,8 +382,8 @@
             # attr(x, "labels")
 
             if (any(has_tag(labels))) {
-                class(labels) <- c("tagged", "vctrs_vctr", class(labels))
-            }
+            class(labels) <- c("tagged", "vctrs_vctr", class(labels))
+        }
         }
     }
     
