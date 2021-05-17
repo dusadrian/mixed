@@ -1,24 +1,29 @@
 `tag` <- function(...) {
     x <- as.character(c(...))
-    morethan2 <- nchar(gsub("-", "", x)) > 2 & unlist(lapply(x, possibleNumeric))
+    ln <- logical(length(x))
+    pN <- unlist(lapply(x, possibleNumeric))
+    if (any(pN)) {
+        ln[pN] <- abs(asNumeric(x[pN])) > 32767
+    }
     
-    if (any(morethan2)) {
-        large_numbers <- as.numeric(sort(unique(x[morethan2])))
+    
+    if (any(ln)) {
+        large_numbers <- as.numeric(sort(unique(x[ln])))
         
         if (length(large_numbers) < length(letters)) {
             names(large_numbers) <- paste0("_", letters[seq_along(large_numbers)])
-            x[morethan2] <- names(large_numbers)[match(x[morethan2], large_numbers)]
+            x[ln] <- names(large_numbers)[match(x[ln], large_numbers)]
         }
         else {
             cat("\n")
-            stop("Too many large numbers to tag.\n\n", call. = FALSE)
+            stop("Too many large numbers.\n\n", call. = FALSE)
         }
     }
     
     x <- .Call("_tag", x, PACKAGE = "mixed")
     class(x) <- c("tagged", "vctrs_vctr", "double")
 
-    if (any(morethan2)) {
+    if (any(ln)) {
         attr(x, "large_numbers") <- large_numbers
     }
     return(x)
@@ -35,20 +40,25 @@
     else if (!is.double(x)) {
         return(logical(length(x)))
     }
-
-    if (!is.null(tag) && !is.atomic(tag) && (length(tag) > 1 || is.na(tag))) {
-        cat("\n")
-        stop("`tag` should be a vector of length 1.\n\n", call. = FALSE)
-    }
     
     if (!is.null(tag)) {
+        if (!is.atomic(tag) && (length(tag) > 1 || is.na(tag))) {
+            cat("\n")
+            stop("`tag` should be a vector of length 1.\n\n", call. = FALSE)
+        }
+
         large_numbers <- attr(x, "large_numbers")
         if (!is.null(large_numbers)) {
             if (is.element(tag, large_numbers)) {
                 tag <- names(large_numbers[large_numbers == tag])
             }
         }
+
         tag <- as.character(tag)
+    }
+    
+    if (possibleNumeric(tag) && abs(asNumeric(tag)) > 32767) {
+        return(logical(length(x)))
     }
     
     return(.Call("_has_tag", x, tag, PACKAGE = "mixed"))
