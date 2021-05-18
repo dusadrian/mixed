@@ -21,7 +21,7 @@
     }
     
     x <- .Call("_tag", x, PACKAGE = "mixed")
-    class(x) <- c("tagged", "vctrs_vctr", "double")
+    class(x) <- c("tagged", "double")
 
     if (any(ln)) {
         attr(x, "large_numbers") <- large_numbers

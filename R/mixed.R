@@ -112,7 +112,7 @@
         # attr(x, "labels")
         
         if (any(has_tag(labels))) {
-            class(labels) <- c("tagged", "vctrs_vctr", class(labels))
+            class(labels) <- c("tagged", class(labels))
         }
         
         attrx$labels <- labels
@@ -392,7 +392,7 @@
             # attr(x, "labels")
 
             if (any(has_tag(labels))) {
-            class(labels) <- c("tagged", "vctrs_vctr", class(labels))
+            class(labels) <- c("tagged", class(labels))
         }
         }
     }
