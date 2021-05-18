@@ -118,7 +118,9 @@
     }
     
     out <- format(unclass(x), digits = digits)
+
     tagged <- has_tag(x)
+    tagged[is.na(tagged)] <- FALSE
 
     if (any(tagged)) {
         out[tagged] <- paste0("NA(", get_tag(x[tagged]), ")")
@@ -129,7 +131,12 @@
 }
 
 `print.tagged` <- function(x, ...) {
-    print(noquote(format_tagged(x)), ...)
+    if (is.character(x)) {
+        print(unclass(x))
+    }
+    else {
+        print(noquote(format_tagged(x)), ...)
+    }
 }
 
 

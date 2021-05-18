@@ -67,6 +67,13 @@ S3method("<", haven_labelled)
 S3method(">=", haven_labelled)
 S3method(">", haven_labelled)
 
+S3method("==", tagged)
+S3method("!=", tagged)
+S3method("<=", tagged)
+S3method("<", tagged)
+S3method(">=", tagged)
+S3method(">", tagged)
+
 
 S3method(print, tagged)
 S3method(format, tagged)

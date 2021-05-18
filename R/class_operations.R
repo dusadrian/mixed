@@ -5,22 +5,6 @@
     }
 }
 
-`==.haven_labelled` <- function(e1, e2) {
-    if (is.character(e2) && !all(has_tag(e2))) {
-        return(logical(length(e1)))
-    }
-
-    return(unclass(untag(e1)) == unclass(untag(e2)))
-}
-
-`!=.haven_labelled` <- function(e1, e2) {
-    if (is.character(e2) && !all(has_tag(e2))) {
-        return(logical(length(e1)))
-    }
-
-    return(unclass(untag(e1)) != unclass(untag(e2)))
-}
-
 `anyDuplicated.haven_labelled` <- function(x, incomparables = FALSE, ...) {
     vec_duplicate_any(untag(x))
 }
@@ -67,6 +51,22 @@
     return(sort_tagged(x, decreasing, na.last, ...))
 }
 
+`==.haven_labelled` <- function(e1, e2) {
+    if (is.character(e2) && !all(has_tag(e2))) {
+        return(logical(length(e1)))
+    }
+
+    return(unclass(untag(e1)) == unclass(untag(e2)))
+}
+
+`!=.haven_labelled` <- function(e1, e2) {
+    if (is.character(e2) && !all(has_tag(e2))) {
+        return(logical(length(e1)))
+    }
+
+    return(unclass(untag(e1)) != unclass(untag(e2)))
+}
+
 `<=.haven_labelled` <- function(e1, e2) {
     return(unclass(untag(e1)) <= unclass(untag(e2)))
 }
@@ -80,6 +80,30 @@
 }
 
 `>.haven_labelled` <- function(e1, e2) {
+    return(unclass(untag(e1)) > unclass(untag(e2)))
+}
+
+`==.tagged` <- function(e1, e2) {
+    return(unclass(untag(e1)) == unclass(untag(e2)))
+}
+
+`!=.tagged` <- function(e1, e2) {
+    return(unclass(untag(e1)) != unclass(untag(e2)))
+}
+
+`<=.tagged` <- function(e1, e2) {
+    return(unclass(untag(e1)) <= unclass(untag(e2)))
+}
+
+`<.tagged` <- function(e1, e2) {
+    return(unclass(untag(e1)) < unclass(untag(e2)))
+}
+
+`>=.tagged` <- function(e1, e2) {
+    return(unclass(untag(e1)) >= unclass(untag(e2)))
+}
+
+`>.tagged` <- function(e1, e2) {
     return(unclass(untag(e1)) > unclass(untag(e2)))
 }
 
