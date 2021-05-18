@@ -17,27 +17,38 @@
         misvals <- sort(na_values)
     }
 
-    x <- c(x, unname(unclass(labels)))
-
-    if (!is.null(na_range)) {
-        uniques <- sort(unique(x[x >= na_range[1] & x <= na_range[2]]))
-        if (length(uniques) == 0) {
-            uniques <- na_range
-        }
-        else {
-            uniques <- sort(unique(c(uniques, na_range)))
+    if (is.numeric(x)) {
+        if (is.numeric(labels)) {
+            x <- c(x, unname(unclass(labels)))
         }
 
-        misvals <- sort(unique(c(misvals, uniques)))
+        if (!is.null(na_range)) {
+            uniques <- sort(unique(x[x >= na_range[1] & x <= na_range[2]]))
+            if (length(uniques) == 0) {
+                uniques <- na_range
+            }
+            else {
+                uniques <- sort(unique(c(uniques, na_range)))
+            }
+
+            misvals <- sort(unique(c(misvals, uniques)))
+        }
     }
 
     large_numbers <- logical(length(misvals))
     numbers <- unlist(lapply(large_numbers, possibleNumeric))
+
     if (any(numbers)) {
         large_numbers[numbers] <- abs(asNumeric(misvals[numbers])) > 32767
     }
+    
+    if (any(!numbers)) {
+        if (any(nchar(misvals[!numbers]) > 2)) {
+            cat("\n")
+            stop(simpleError("Non-numerical missing values should have at most 2 characters.\n\n"))
+        }
+    }
 
-    nchars <- nchar(abs(misvals))
     result <- list(justright = misvals[!large_numbers], large_numbers = misvals[large_numbers])
     
     if (length(result$large_numbers) > length(letters)) {
@@ -62,7 +73,7 @@
 
 `as_mixed.haven_labelled` <- function(x, ...) {
     
-    if (is_mixed(x)) {
+    if (is_mixed(x) || !is.atomic(x) || is.character(x)) {
         return(x)
     }
 
@@ -86,7 +97,7 @@
         }
     }
 
-    if (!is.null(labels)) {
+    if (!is.null(labels) && is.numeric(labels)) {
         
         if (length(tagged_values$justright) > 0) {
             labels[is.element(labels, tagged_values$justright)] <- tag(labels[is.element(labels, tagged_values$justright)])
@@ -396,8 +407,3 @@
         class = "mixed_labelled"
     )
 }
-
-
-# wvs <- readRDS("Downloads/World Values Survey 2012/WVS2012.rds")
-# wvs <- as_mixed(wvs)
-# wvs$V6
