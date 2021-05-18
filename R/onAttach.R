@@ -69,6 +69,12 @@
                         })
 
                         dots <- unlist(dots)
+
+                        if (!is.numeric(dots)) {
+                            do.call("cat", list("\n"))
+                            do.call("stop", list("Tagged NA values can be created only for numeric vectors.\n\n", call. = FALSE))
+                        }
+
                         attributes(dots) <- attributes(tags)
                         if (!is.null(nms)) {
                             attr(dots, "names") <- nms
