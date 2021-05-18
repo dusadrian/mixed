@@ -28,12 +28,11 @@
             uniques <- sort(unique(c(uniques, na_range)))
         }
 
-        uniques <- setdiff(uniques, na_values)
         misvals <- sort(unique(c(misvals, uniques)))
     }
 
     large_numbers <- logical(length(misvals))
-    numbers <- unlist(lapply(x, possibleNumeric))
+    numbers <- unlist(lapply(large_numbers, possibleNumeric))
     if (any(numbers)) {
         large_numbers[numbers] <- abs(asNumeric(misvals[numbers])) > 32767
     }
