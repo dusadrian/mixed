@@ -6,7 +6,6 @@
         ln[numbers] <- abs(asNumeric(x[numbers])) > 32767
     }
     
-    
     if (any(ln)) {
         large_numbers <- as.numeric(sort(unique(x[ln])))
         
@@ -18,6 +17,12 @@
             cat("\n")
             stop("Too many large numbers.\n\n", call. = FALSE)
         }
+    }
+
+    # https://stackoverflow.com/questions/34613761/detect-non-ascii-characters-in-a-string
+    if (any(grepl("[^ -~]", x)) {
+        cat("\n")
+        stop("Only ASCII characters can be tagged.\n\n", call. = FALSE)
     }
     
     x <- .Call("_tag", x, PACKAGE = "mixed")
