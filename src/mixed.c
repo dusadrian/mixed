@@ -21,9 +21,9 @@ SEXP _unlockEnvironment(SEXP env) {
 
 
 // adapted from https://stackoverflow.com/questions/11815894/how-to-read-write-arbitrary-bits-in-c-c
-#define bit_value(number, bit) ((number>>bit) & 1)
-#define set_bit(number, bit) number |= (1 << bit)
-
+#define bit_value(data, y) ((data >> y) & 1)
+#define set_bit(data, y) data |= (1 << y)
+#define clear_bit(data, y)  data &= ~(1 << y)
 
 /*
 
@@ -69,6 +69,8 @@ const int TAG_BYTE = 4;
 #endif
 
 
+const int WILDCARD = 45; // "-"
+
 SEXP _tag(SEXP x) {
     int n = Rf_length(x);
     SEXP out = PROTECT(Rf_allocVector(REALSXP, n));
@@ -78,7 +80,8 @@ SEXP _tag(SEXP x) {
         int nchars = Rf_length(STRING_ELT(x, i));
         int number = 0;
         Rboolean numeric = TRUE;
-        Rboolean firstminus = CHAR(STRING_ELT(x, i))[0] == CHAR(mkChar("-"))[0];
+        Rboolean firstminus = CHAR(STRING_ELT(x, i))[0] == WILDCARD;
+        Rboolean thirdminus = nchars > 2 && CHAR(STRING_ELT(x, i))[2] == WILDCARD;
 
         // int test;
         // sscanf(CHAR(STRING_ELT(x, i)), "%d", &test);
@@ -92,9 +95,8 @@ SEXP _tag(SEXP x) {
             }
             else {
                 numeric = FALSE;
-                firstminus = FALSE;
-                if (nchars > 2) {
-                    nchars = 2;
+                if (nchars > 2 + firstminus + thirdminus) {
+                    nchars = 2 + firstminus + thirdminus;
                 }
             }
         }
@@ -106,17 +108,11 @@ SEXP _tag(SEXP x) {
         ieee_double y;
         y.value = NA_REAL;
 
-        if (firstminus) {
-            y.value = -1 * NA_REAL; // set the sign bit
-        }
-
         int bytepos = TAG_BYTE;
         int bytepos2 = bytepos + ((bytepos == 3) ? -1 : 1);
 
         if (numeric) {
-            // any entry from the ASCII table can be represented in 7 bits
-            // the 8th is therefore available as a flag
-            set_bit(y.byte[bytepos2], 7);
+            y.value = -1 * NA_REAL; // signal numeric using the sign bit
 
             // transform the number into its binary representation
             // the number does not exceed 32767, to fit in the available 15 bits
@@ -146,12 +142,22 @@ SEXP _tag(SEXP x) {
             }
         }
         else {
-            for (int c = 0; c < nchars; c++) {
-                y.byte[bytepos] = CHAR(STRING_ELT(x, i))[c + firstminus];
-                bytepos += (bytepos == 3) ? -1 : 1;
+            for (int c = firstminus; c < nchars; c++) {
+                if (c == 2 && thirdminus) {
+                    set_bit(y.byte[TAG_BYTE], 7);
+                }
+                else {
+                    y.byte[bytepos] = CHAR(STRING_ELT(x, i))[c];
+                    bytepos += (bytepos == 3) ? -1 : 1;
+                }
             }
         }
 
+        if (firstminus) {
+            // any entry from the ASCII table can be represented in 7 bits
+            // the 8th (or in this case, the 16th) is available as a sign bit (1 means negative)
+            set_bit(y.byte[bytepos2], 7);
+        }
         
         REAL(out)[i] = y.value;
     }
@@ -190,7 +196,7 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
                 y.value = xi;
                 int bytepos = TAG_BYTE;
                 int bytepos2 = bytepos + ((bytepos == 3) ? -1 : 1);
-                Rboolean xi_numeric = bit_value(y.byte[bytepos2], 7) == 1;
+                Rboolean xi_numeric = signbit(xi);
 
                 char tag = y.byte[TAG_BYTE];
                 
@@ -206,62 +212,78 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
                             Rf_errorcall(R_NilValue, "`tag` should be a vector of length 1");
                         }
                         
-                        Rboolean tag_minus = CHAR(STRING_ELT(tag_, 0))[0] == CHAR(mkChar("-"))[0];
-                        Rboolean xi_minus = signbit(xi);
-                        
-                        LOGICAL(out)[i] = ((1 * tag_minus + 1 * xi_minus) != 1);
+                        Rboolean tag_numeric = TRUE;
+                        int tag_chars = Rf_length(STRING_ELT(tag_, 0));
+                        Rboolean tag_minus = CHAR(STRING_ELT(tag_, 0))[0] == WILDCARD;
+                        Rboolean test = TRUE;
 
-                        if (LOGICAL(out)[i]) {
-                            int nchars = Rf_length(STRING_ELT(tag_, 0));
-                            int tag_number = 0;
-                            Rboolean tag_numeric = TRUE;
+                        int tag_number = 0;
 
-                            for (int c = tag_minus; c < nchars; c++) {
-                                int charc = CHAR(STRING_ELT(tag_, 0))[c] - '0';
-                                if (charc >= 0 && charc <= 9 && tag_numeric) {
-                                    tag_number = tag_number * 10 + charc;
-                                }
-                                else {
-                                    tag_numeric = FALSE;
-                                }
+                        for (int c = tag_minus; c < tag_chars; c++) {
+                            int charc = CHAR(STRING_ELT(tag_, 0))[c] - '0';
+                            if (charc >= 0 && charc <= 9 && tag_numeric) {
+                                tag_number = tag_number * 10 + charc;
                             }
-
-                            
-                            if (tag_number > 32767) {
-                                Rf_errorcall(R_NilValue, "`tag` number too large, use the R function has_tag()");
-                            }
-
-                            LOGICAL(out)[i] = ((1 * xi_numeric + 1 * tag_numeric) != 1);
-
-                            if (LOGICAL(out)[i]) {
-                                Rboolean test = TRUE;
-
-                                if (xi_numeric) {
-                                    int xi_number = 0;
-                                    int power = 1;
-
-                                    for (int bit = 0; bit < 8; bit++) {
-                                        xi_number += bit_value(y.byte[bytepos], bit) * power;
-                                        power *= 2;
-                                    }
-
-                                    for (int bit = 0; bit < 7; bit++) {
-                                        xi_number += bit_value(y.byte[bytepos2], bit) * power;
-                                        power *= 2;
-                                    }
-
-                                    test = xi_number == tag_number;
-                                }
-                                else {
-                                    test = test && y.byte[bytepos] == CHAR(STRING_ELT(tag_, 0))[0];
-                                    if (nchars > 1) {
-                                        test = test && y.byte[bytepos2] == CHAR(STRING_ELT(tag_, 0))[1];
-                                    }
-                                }
-
-                                LOGICAL(out)[i] = test;
+                            else {
+                                tag_numeric = FALSE;
                             }
                         }
+
+                        if (tag_number > 32767) {
+                            Rf_errorcall(R_NilValue, "`tag` number too large, use the R function has_tag()");
+                        }
+
+                        Rboolean xi_minus = bit_value(y.byte[bytepos2], 7) == 1;
+                        test = ((1 * xi_numeric + 1 * tag_numeric) != 1) && ((1 * tag_minus + 1 * xi_minus) != 1);
+
+                        if (test) {
+                            if (xi_numeric) {
+                                int xi_number = 0;
+                                int power = 1;
+
+                                for (int bit = 0; bit < 8; bit++) {
+                                    xi_number += bit_value(y.byte[bytepos], bit) * power;
+                                    power *= 2;
+                                }
+
+                                for (int bit = 0; bit < 7; bit++) {
+                                    xi_number += bit_value(y.byte[bytepos2], bit) * power;
+                                    power *= 2;
+                                }
+
+                                test = xi_number == tag_number;
+                            }
+                            else {
+                                Rboolean thirdminus = bit_value(y.byte[bytepos], 7) == 1;
+
+                                clear_bit(y.byte[bytepos], 7);
+                                clear_bit(y.byte[bytepos2], 7);
+
+                                int xi_chars = tag_minus + thirdminus + (y.byte[bytepos] != '\0') + (y.byte[bytepos2] != '\0');
+                                test = test && tag_chars == xi_chars;
+
+                                if (tag_minus) {
+                                    test = test && CHAR(STRING_ELT(tag_, 0))[0] == WILDCARD;
+                                }
+
+                                if (test) {
+                                    
+                                    test = test && y.byte[bytepos] == CHAR(STRING_ELT(tag_, 0))[tag_minus];
+                                    
+                                    if (tag_chars > 1 + thirdminus) {
+                                        if (thirdminus) {
+                                            test = test && CHAR(STRING_ELT(tag_, 0))[2] == WILDCARD;
+                                        }
+
+                                        if (tag_chars > tag_minus + thirdminus + 1) {
+                                            test = test && y.byte[bytepos2] == CHAR(STRING_ELT(tag_, 0))[tag_minus + thirdminus + 1];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        LOGICAL(out)[i] = test;
                     }
                     else {
                         LOGICAL(out)[i] = 0;
@@ -280,7 +302,6 @@ SEXP _has_tag(SEXP x, SEXP tag_) {
 
 
 SEXP _get_tag(SEXP x) {
-
     
     int n = Rf_length(x);
     SEXP out = PROTECT(Rf_allocVector(STRSXP, n));
@@ -297,10 +318,11 @@ SEXP _get_tag(SEXP x) {
 
             int bytepos = TAG_BYTE;
             int bytepos2 = bytepos + ((bytepos == 3) ? -1 : 1);
-
-            Rboolean numeric = bit_value(y.byte[bytepos2], 7) == 1;
             
-            char tag[24];
+            Rboolean numeric = signbit(xi);
+            
+            char tag[32];
+            Rboolean firstminus = bit_value(y.byte[bytepos2], 7) == 1;
 
             if (numeric) {
                 int number = 0;
@@ -315,26 +337,53 @@ SEXP _get_tag(SEXP x) {
                     number += bit_value(y.byte[bytepos2], bit) * power;
                     power *= 2;
                 }
-
-                Rboolean minus = signbit(xi);
-                if (minus) {
+                
+                if (firstminus) {
                     number *= -1;
                 }
                 
                 sprintf(tag, "%d", number);
                 SET_STRING_ELT(out, i,  Rf_mkCharLenCE(tag, strlen(tag), CE_UTF8));
-                
             }
             else {
-                
-                tag[0] = y.byte[TAG_BYTE];
+                Rboolean thirdminus = bit_value(y.byte[bytepos], 7) == 1;
 
-                if (tag[0] == '\0') {
-                    SET_STRING_ELT(out, i, NA_STRING);
+                clear_bit(y.byte[bytepos], 7);
+                clear_bit(y.byte[bytepos2], 7);
+
+                int pos = 0;
+                
+                if (firstminus) {
+                    tag[pos] = WILDCARD;
+                    pos++;
+                }
+                
+                if (y.byte[TAG_BYTE] == '\0') {
+                    if (pos == 0) {
+                        SET_STRING_ELT(out, i, NA_STRING);
+                    }
+                    else {
+                        SET_STRING_ELT(out, i, Rf_mkCharLenCE(tag, pos, CE_UTF8));
+                    }
                 }
                 else {
-                    tag[1] = y.byte[bytepos2];
-                    SET_STRING_ELT(out, i,  Rf_mkCharLenCE(tag, ((tag[1] == '\0') ? 1 : 2), CE_UTF8));
+                    tag[pos] = y.byte[TAG_BYTE];
+                    pos++;
+
+                    if (y.byte[bytepos2] == '\0') {
+                        SET_STRING_ELT(out, i,  Rf_mkCharLenCE(tag, pos, CE_UTF8));
+                    }
+                    else {
+                        if (thirdminus) {
+                            tag[pos] = WILDCARD;
+                            pos++;
+                        }
+                        
+                        tag[pos] = y.byte[bytepos2];
+                        pos++;
+
+                        SET_STRING_ELT(out, i, Rf_mkCharLenCE(tag, pos, CE_UTF8));
+                    }
                 }
             }
         }
