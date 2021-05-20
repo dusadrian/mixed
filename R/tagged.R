@@ -10,7 +10,7 @@
         large_numbers <- as.numeric(sort(unique(x[ln])))
         
         if (length(large_numbers) < length(letters)) {
-            names(large_numbers) <- paste0("_", letters[seq_along(large_numbers)])
+            names(large_numbers) <- paste0("-", letters[seq_along(large_numbers)], "-")
             x[ln] <- names(large_numbers)[match(x[ln], large_numbers)]
         }
         else {
@@ -20,7 +20,7 @@
     }
 
     # https://stackoverflow.com/questions/34613761/detect-non-ascii-characters-in-a-string
-    if (any(grepl("[^ -~]", x)) {
+    if (any(grepl("[^!-~]", x))) {
         cat("\n")
         stop("Only ASCII characters can be tagged.\n\n", call. = FALSE)
     }
