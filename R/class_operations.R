@@ -125,6 +125,16 @@
     mean(unclass(x), ...)
 }
 
+`mean.tagged` <- function(x, ...) {
+    x <- x[!has_tag(x)]
+
+    mean(unclass(x), ...)
+}
+
+`median.tagged` <- function(x, na.rm = TRUE, ...) {
+    median(vec_data(x), na.rm = TRUE, ...)
+}
+
 `c_mixed_labelled` <- function(dots, recursive = FALSE, use.names = TRUE) {
     # dots <- list(...)
     mixed <- unlist(lapply(dots, is_mixed))
