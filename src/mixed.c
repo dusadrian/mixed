@@ -56,7 +56,7 @@ bit)
 
 typedef union {
     double value;
-    char byte[8];
+    char byte[16];
 } ieee_double;
 
 
@@ -217,7 +217,7 @@ SEXP _extract_tag (double xi) {
     SET_STRING_ELT(out, 0, NA_STRING);
 
     if (isnan(xi)) {
-        char tag[8];
+        char tag[16];
         ieee_double y;
         y.value = xi;
 
