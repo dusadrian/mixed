@@ -56,7 +56,7 @@ bit)
 
 typedef union {
     double value;
-    char byte[16];
+    char byte[8];
 } ieee_double;
 
 
@@ -217,7 +217,7 @@ SEXP _extract_tag (double xi) {
     SET_STRING_ELT(out, 0, NA_STRING);
 
     if (isnan(xi)) {
-        char tag[5];
+        char tag[8];
         ieee_double y;
         y.value = xi;
 
@@ -226,6 +226,20 @@ SEXP _extract_tag (double xi) {
         
         Rboolean numeric = signbit(xi);
         Rboolean firstminus = bit_value(y.byte[bytepos2], 7) == 1;
+
+        // for (int i = 0; i < 2; i++) {
+        //     if (i == 0) {
+        //         for (int j = 7; j >= 0; j--) {
+        //             printf("%d", bit_value(y.byte[bytepos], j));
+        //         }
+        //     }
+        //     else {
+        //         for (int j = 7; j >= 0; j--) {
+        //             printf("%d", bit_value(y.byte[bytepos2], j));
+        //         }
+        //     }
+        //     printf("\n");
+        // }
 
         if (numeric) {
             int number = 0;
@@ -250,20 +264,6 @@ SEXP _extract_tag (double xi) {
         }
         else {
             Rboolean thirdminus = bit_value(y.byte[bytepos], 7) == 1;
-
-            // for (int i = 0; i < 2; i++) {
-            //     if (i == 0) {
-            //         for (int j = 7; j >= 0; j--) {
-            //             printf("%d", bit_value(y.byte[bytepos], j));
-            //         }
-            //     }
-            //     else {
-            //         for (int j = 7; j >= 0; j--) {
-            //             printf("%d", bit_value(y.byte[bytepos2], j));
-            //         }
-            //     }
-            //     printf("\n");
-            // }
 
             clear_bit(y.byte[bytepos], 7);
             clear_bit(y.byte[bytepos2], 7);
