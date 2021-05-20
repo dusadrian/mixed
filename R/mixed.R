@@ -343,6 +343,7 @@
     
     #---------------------------------------
     
+    large_numbers <- NULL
 
     if (sum(declared) > 0) {
 
@@ -396,7 +397,6 @@
             }
         }
     }
-    
     
     new_labelled(x,
         labels = labels,
