@@ -255,3 +255,23 @@
 `sort_val_labels.mixed_labelled` <- function(x, according_to = c("values", "labels"), decreasing = FALSE) {
     return(x[order_labelled(x, according_to = according_to, decreasing = decreasing)])    
 }
+
+
+`val_labels<-.mixed_labelled` <- function(x, value) {
+    if (is.null(value)) {
+        tagged <- has_tag(x)
+        x <- unclass(x)
+        attr(x, "labels") <- NULL
+        if (any(tagged)) {
+            class(x) <- c("tagged", "vctrs_vctr", class(x))
+        }
+    }
+    else {
+        x <- mixed_labelled(unmix(x),
+                labels = value,
+                na_values = attr(x, "na_values", exact = TRUE),
+                na_range = attr(x, "na_range", exact = TRUE),
+                label = attr(x, "label", exact = TRUE))
+    }
+    return(x)
+}

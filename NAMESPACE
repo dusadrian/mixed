@@ -42,12 +42,11 @@ S3method(unmix, data.frame)
 S3method(na_values, mixed_labelled)
 S3method(na_range, mixed_labelled)
 
-# S3method("na_values<-", haven_labelled)
 S3method("na_values<-", mixed_labelled)
 S3method("na_range<-", mixed_labelled)
+S3method("val_labels<-", mixed_labelled)
 
 
-# S3method(c, mixed_labelled)
 S3method(cbind, mixed_labelled)
 S3method(mean, haven_labelled)
 S3method(mean, tagged)
