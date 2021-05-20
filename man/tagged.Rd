@@ -34,18 +34,19 @@ Apart from the regular missing values in R (signaled with \code{NA}), package
 \bold{\code{haven}} introduced the concept of tagged NAs, by storing one additional byte
 of information in the NA value.
 
-As useful as they are, the \bold{\code{haven}} functions have some limitations. The first
+As useful as they are, the \bold{\code{haven}} functions have limitations. The first
 and the most obvious, it accepts only one character as a tag. As it turns out, it is
 actually possible to store two additional bytes instead of only one.
 
-This makes it possible to store not only characters, but the numbers themselves as "tags",
+This makes it possible to store at least two, and in some situations up to four
+characters as a tag. More importantly, numbers themselves can be used as "tags",
 as long as their absolute value is less than 32768. Larger numbers are internally tagged
 as characters, with a corresponding \code{large_numbers} attribute being added.
 
-Another difference from package \bold{\code{haven}} is related to printing the tagged NA
-values on the R console. In \bold{\code{haven}}, they are printed as regular NAs. In this
-package, such values are formatted in a similar way with the objects of class
-\code{haven_labelled}, for instance \code{NA(a)} or \code{NA(9999)}
+Theoretically, special characters could be used as tags because most would fit in two
+bytes. In practice however, it is difficult to guess or to introduce information about
+character encodings, and most of the times these characters lead to "invalid multibyte"
+errors. To circumvent these issues, tagged characters are restricted to ASCII only.
 }
 
 \author{
