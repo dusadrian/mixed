@@ -147,6 +147,7 @@
 
 `untag` <- function(x, numeric = FALSE) {
     tagged <- has_tag(x)
+    is_tagged <- inherits(x, "tagged")
     mixed <- inherits(x, "mixed_labelled")
     attrx <- attributes(x)
 
@@ -169,6 +170,10 @@
         }
         attrx$na_values <- NULL
         attrx$na_range <- NULL
+    }
+
+    if (is_tagged) {
+        attrx$class <- setdiff(attrx$class, "tagged")
     }
 
     attributes(x) <- attrx
