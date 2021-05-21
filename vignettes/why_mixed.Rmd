@@ -108,7 +108,20 @@ x2
 ```
 
 
-While creating the `mixed_labelled` class to deal with the declared missing values, other interesting possibilities opened up. In particular, vectors containing tagged NA values gain a special class that allows formatting / printing such values:
+While creating the `mixed_labelled` class to deal with the declared missing values, other interesting possibilities opened up. Consider the following treatment of the tagged NA values in package **haven**:
+
+
+```{r}
+haven::tagged_na('a')
+```
+
+The NA value is tagged, but this would remain unknown without the command. On the other hand:
+
+```{r}
+tag('a')
+```
+
+This is possible because tagged NA values in package **mixed** are allocated a class `tagged` that allows custom formatting and printing. This treatment of tagged NA values is propagated to entire vectors:
 
 ```{r}
 c(1, tag('a'))
@@ -118,7 +131,7 @@ The function `tag()` is similar to the function `tagged_na()` from package **hav
 
 * instead of one (the first) character, it accepts two
 
-* it also accepts regular numbers
+* it also accepts numbers, not only characters
 
 
 ```{r}
@@ -127,16 +140,13 @@ tag('ab')
 tag(12345)
 ```
 
-The difference is particularly obvious when extracting the tag:
+This was made possible because, as it turns out, it is possible to tag an NA value using not only one but actually two extra bytes, and the available 16 bits can fit any number between -32767 to 32767. The numeric tagged value is then properly extracted as numeric:
 
 
 ```{r}
-haven::na_tag(tag(12345))
-
 get_tag(tag(12345))
 ```
 
-This was made possible because, as it turns out, it is possible to tag an NA value using not only one extra, but actually two extra bytes.
-
+This is already an improvement over the **haven** related functions, because an NA value tagged with a number is essentially a missing... *number*.
 
 
