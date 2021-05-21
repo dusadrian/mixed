@@ -221,6 +221,15 @@
     do.call("cbind", cargs)
 }
 
+`levels.tagged` <- function(x) {
+    NULL
+}
+
+`names<-.tagged` <- function(x, value) {
+    attr(x, "names") <- value
+    x
+}
+
 `as_factor.mixed_labelled` <- function(x, ..., only_labelled = TRUE) {
     dots <- list(...)
     if (is.element("untag", names(dots)) && is.logical(dots$untag)) {
@@ -274,4 +283,89 @@
                 label = attr(x, "label", exact = TRUE))
     }
     return(x)
+}
+
+
+`vec_ptype2.double.tagged` <- function(x, y, ...) vec_ptype2(x, vec_data(y), ...)
+
+`vec_ptype2.integer.tagged` <- vec_ptype2.double.tagged
+
+`vec_ptype2.character.tagged` <- vec_ptype2.double.tagged
+
+`vec_ptype2.tagged.double` <- function(x, y, ...) vec_ptype2(y, x, ...)
+
+`vec_ptype2.tagged.integer` <- vec_ptype2.tagged.double
+
+`vec_ptype2.tagged.character` <- vec_ptype2.tagged.double
+
+`vec_ptype2.tagged.tagged` <- function(x, y, ..., x_arg = "", y_arg = "") {
+    vec_ptype2(vec_data(x), vec_data(y), ..., x_arg = x_arg, y_arg = y_arg)
+}
+
+
+
+`vec_cast.double.tagged` <- function(x, to, ...) vec_cast(vec_data(untag(x)), to)
+
+`vec_cast.integer.tagged` <- function(x, to, ...) vec_cast(vec_data(untag(x)), to)
+
+`vec_cast.character.tagged` <- function(x, to, ...) {
+    vec_data(untag(x))
+}
+
+`vec_cast.tagged.tagged` <- function(x, to, ..., x_arg = "", to_arg = "") {
+    out <- vec_cast(vec_data(x), vec_data(to), ..., x_arg = x_arg, to_arg = to_arg)
+
+    # do we lose tagged na values?
+    if (is.double(x) && !is.double(out)) {
+        lossy <- has_tag(x)
+        maybe_lossy_cast(out, x, to, lossy,
+            x_arg = x_arg,
+            to_arg = to_arg,
+            details = "Only doubles can hold tagged na values."
+        )
+    }
+  
+    out
+}
+
+`vec_cast.tagged.double` <- function(x, to, ...) {
+    vec_cast.tagged.tagged(x, to, ...)
+}
+
+`vec_cast.tagged.integer` <- function(x, to, ...) {
+    vec_cast.tagged.tagged(x, to, ...)
+}
+
+`vec_cast.tagged.character` <- function(x, to, ...) {
+    vec_cast.tagged.tagged(x, to, ...)
+}
+
+`as.character.tagged` <- function(x, ...) {
+    as.character(vec_data(x))
+}
+
+
+`vec_arith.tagged` <- function(op, x, y, ...) {
+    UseMethod("vec_arith.tagged", y)
+}
+
+`vec_arith.tagged.default` <- function(op, x, y, ...) {
+    stop_incompatible_op(op, x, y)
+}
+
+`vec_arith.tagged.tagged` <- function(op, x, y, ...) {
+    vec_arith_base(op, x, y)
+}
+
+`vec_arith.tagged.numeric` <- function(op, x, y, ...) {
+    vec_arith_base(op, x, y)
+}
+
+`vec_arith.numeric.tagged` <- function(op, x, y, ...) {
+    vec_arith_base(op, x, y)
+}
+
+
+`vec_math.tagged` <- function(.fn, .x, ...) {
+    vec_math_base(.fn, .x, ...)
 }

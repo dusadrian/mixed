@@ -255,7 +255,7 @@
             },
             ns = "labelled"
         ))
-        
+
         env <- as.environment("package:labelled")
 
         do.call("unlockBinding", list(sym = "tagged_na", env = env))
