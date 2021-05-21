@@ -8,7 +8,9 @@ Authors@R: person(given = "Adrian", family = "Dusa",
                   comment = c(ORCID = "0000-0002-3525-9253"))
 Depends: R (>= 3.5.0)
 License: GPL (>= 3)
+VignetteBuilder:  knitr
 Imports: vctrs, haven (>= 2.4.0), labelled
+Suggests: knitr
 Description: A package that extends the "haven_labelled" class introduced in package 'haven',
     to deal with mixed labelled objects where existing values defined as missing are treated
     as both real and missing values, at the same time.
