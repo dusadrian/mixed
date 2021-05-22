@@ -27,18 +27,29 @@ SEXP _unlockEnvironment(SEXP env) {
 
 
 
+
 typedef union {
     double value;
-    char byte[16];
-} ieee_double;
+    char byte[8];
+} ieee_double8;
+
+
+typedef union {
+    double value;
+    short word[4];
+} ieee_double4;
 
 
 #ifdef WORDS_BIGENDIAN
 // First two bytes are sign & exponent
 // Last four bytes (that is, 32 bits) are 1954
-const int TAG_BYTE = 3;
+const int WORD = 1;
+const int BYTE_1 = 2;
+const int BYTE_2 = 3;
 #else
-const int TAG_BYTE = 4;
+const int WORD = 2;
+const int BYTE_1 = 5;
+const int BYTE_2 = 4;
 #endif
 
 
@@ -73,7 +84,6 @@ Rboolean isASCII(unsigned char ch) {
 }
 
 
-
 SEXP _tag(SEXP x) {
 
     if (TYPEOF(x) != STRSXP) {
@@ -84,9 +94,6 @@ SEXP _tag(SEXP x) {
     SEXP out = PROTECT(Rf_allocVector(REALSXP, n));
 
     for (int i = 0; i < n; ++i) {
-        
-        ieee_double y;
-        y.value = NA_REAL;
         
         int nchars = Rf_length(STRING_ELT(x, i));
 
@@ -124,58 +131,33 @@ SEXP _tag(SEXP x) {
              Rf_errorcall(R_NilValue, "Number(s) too large, use the R function tag().");
         }
 
-        int bytepos = TAG_BYTE;
-        int bytepos2 = bytepos + ((bytepos == 3) ? -1 : 1);
-
         if (numeric) {
+            ieee_double4 y;
             y.value = -1 * NA_REAL; // signal numeric using the sign bit
 
-            // transform the number into its binary representation
-            // the number does not exceed 32767, to fit in the available 15 bits
-            int binary[15]; 
-            for (int bit = 0; bit < 15; bit++) {
-                binary[bit] = 0;
+            y.word[WORD] = number;
+            if (firstminus) {
+                y.word[WORD] *= -1;
             }
 
-            int bit = 0;
-            while (number > 0) {
-                // storing remainder in binary array
-                binary[bit] = number % 2;
-                number = number / 2;
-                bit++;
-            }
-
-            for (int bit = 0; bit < 8; bit++) { // store the first 8 bits of the number
-                if (binary[bit] == 1) {
-                    set_bit(y.byte[bytepos], bit);
-                }
-            }
-
-            for (int bit = 0; bit < 7; bit++) { // store the last 7 bits of the number
-                if (binary[bit + 8] == 1) {
-                    set_bit(y.byte[bytepos2], bit);
-                }
-            }
+            REAL(out)[i] = y.value;
         }
         else {
-            for (int c = firstminus; c < nchars; c++) {
-                if (c == 2 && thirdminus) {
-                    set_bit(y.byte[TAG_BYTE], 7);
-                }
-                else {
-                    y.byte[bytepos] = CHAR(STRING_ELT(x, i))[c];
-                    bytepos += (bytepos == 3) ? -1 : 1;
-                }
+            ieee_double8 y;
+            y.value = NA_REAL;
+            
+            y.byte[BYTE_1] = CHAR(STRING_ELT(x, i))[firstminus];
+            if (firstminus) {
+                y.byte[BYTE_1] *= -1;
             }
-        }
 
-        if (firstminus) {
-            // any entry from the ASCII table can be represented in 7 bits
-            // the 8th (or in this case, the 16th) is available as a sign bit (1 means negative)
-            set_bit(y.byte[bytepos2], 7);
+            y.byte[BYTE_2] = CHAR(STRING_ELT(x, i))[firstminus + 1 + thirdminus];
+            if (thirdminus) {
+                y.byte[BYTE_2] *= -1;
+            }
+
+            REAL(out)[i] = y.value;
         }
-        
-        REAL(out)[i] = y.value;
     }
 
     UNPROTECT(1);
@@ -191,56 +173,29 @@ SEXP _extract_tag (double xi) {
     SET_STRING_ELT(out, 0, NA_STRING);
 
     if (isnan(xi)) {
-        char tag[16];
-        ieee_double y;
-        y.value = xi;
-
-        int bytepos = TAG_BYTE;
-        int bytepos2 = bytepos + ((bytepos == 3) ? -1 : 1);
-        
         Rboolean numeric = signbit(xi);
-        Rboolean firstminus = bit_value(y.byte[bytepos2], 7) == 1;
-
-        // for (int i = 0; i < 2; i++) {
-        //     if (i == 0) {
-        //         for (int j = 7; j >= 0; j--) {
-        //             printf("%d", bit_value(y.byte[bytepos], j));
-        //         }
-        //     }
-        //     else {
-        //         for (int j = 7; j >= 0; j--) {
-        //             printf("%d", bit_value(y.byte[bytepos2], j));
-        //         }
-        //     }
-        //     printf("\n");
-        // }
+        char tag[8];
 
         if (numeric) {
-            int number = 0;
-            int power = 1;
+            ieee_double4 y;
+            y.value = xi;
 
-            for (int bit = 0; bit < 8; bit++) {
-                number += bit_value(y.byte[bytepos], bit) * power;
-                power *= 2;
-            }
-
-            for (int bit = 0; bit < 7; bit++) {
-                number += bit_value(y.byte[bytepos2], bit) * power;
-                power *= 2;
-            }
-            
-            if (firstminus) {
-                number *= -1;
-            }
-            
-            sprintf(tag, "%d", number);
+            sprintf(tag, "%d", y.word[WORD]);
             SET_STRING_ELT(out, 0,  Rf_mkCharLenCE(tag, strlen(tag), CE_UTF8));
         }
         else {
-            Rboolean thirdminus = bit_value(y.byte[bytepos], 7) == 1;
+            ieee_double8 y;
+            y.value = xi;
 
-            clear_bit(y.byte[bytepos], 7);
-            clear_bit(y.byte[bytepos2], 7);
+            Rboolean firstminus = y.byte[BYTE_1] < 0;
+            if (firstminus) {
+                y.byte[BYTE_1] *= -1;
+            }
+
+            Rboolean thirdminus = y.byte[BYTE_2] < 0;
+            if (thirdminus) {
+                y.byte[BYTE_2] *= -1;
+            }
 
             int pos = 0;
             
@@ -248,8 +203,8 @@ SEXP _extract_tag (double xi) {
                 tag[pos] = WILDCARD;
                 pos++;
             }
-            
-            if (y.byte[TAG_BYTE] == '\0') {
+
+            if (y.byte[BYTE_1] == '\0') {
                 if (pos == 0) {
                     SET_STRING_ELT(out, 0, NA_STRING);
                 }
@@ -258,7 +213,7 @@ SEXP _extract_tag (double xi) {
                 }
             }
             else {
-                tag[pos] = y.byte[TAG_BYTE];
+                tag[pos] = y.byte[BYTE_1];
                 pos++;
 
                 if (thirdminus) {
@@ -266,13 +221,14 @@ SEXP _extract_tag (double xi) {
                     pos++;
                 }
 
-                if (y.byte[bytepos2] != '\0') {
-                    tag[pos] = y.byte[bytepos2];
+                if (y.byte[BYTE_2] != '\0') {
+                    tag[pos] = y.byte[BYTE_2];
                     pos++;
                 }
                 
                 SET_STRING_ELT(out, 0, Rf_mkCharLenCE(tag, pos, CE_UTF8));
             }
+
         }
     }
 
@@ -351,7 +307,6 @@ https://github.com/wch/r-source/blob/HEAD/src/main/arithmetic.c#L112-L120
 http://www.cs.toronto.edu/~radford/ftp/fltcompress.pdf
 
 https://stackoverflow.com/questions/23212538/float-and-double-significand-numbers-mantissa-pov
-https://github.com/wch/r-source/blob/HEAD/src/main/arithmetic.c#L112-L120
 https://graphics.stanford.edu/~seander/bithacks.html
 https://betterexplained.com/articles/understanding-big-and-little-endian-byte-order/
 
@@ -369,21 +324,23 @@ the value as a NA, not a regular NaN.
 a big-endian architecture - in little endian the sign bit is the last bit)
 
 NA_real_   --   Big Endian
-byte 7 = 7f      1111111    MSB
+byte 7 = 7f     01111111    MSB (first)
 byte 6 = f0     11110000
 byte 5 = 00
 byte 4 = 00
 byte 3 = 00
 byte 2 = 00
 byte 1 = 07     00000111
-byte 0 = a2     10100010    LSB
+byte 0 = a2     10100010    LSB (last)
+
+
 
 The order of the bits in a byte is the same in all computers,
 irrespective of how bytes are arranged in Big Endian or Little Endian
 
 Representations:
-NA_real_              ---------------- 16 available bits to play with
-bin: 0111111111110000 0000000000000000 00000000000000000000011110100010
+NA_real_              ---------------- 16 available bits to play with -- Big Endian
+bin: 0111111111110000 0000000000000000 0000000000000000 0000011110100010
 hex: 7ff00000000007a2
 
 
