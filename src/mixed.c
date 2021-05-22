@@ -25,33 +25,6 @@ SEXP _unlockEnvironment(SEXP env) {
 #define set_bit(data, y) data |= (1 << y)
 #define clear_bit(data, y)  data &= ~(1 << y)
 
-/*
-
-https://stackoverflow.com/questions/51684861/how-does-r-represent-na-internally
-https://github.com/wch/r-source/blob/HEAD/src/include/R_ext/Arith.h#L41-L45
-https://github.com/wch/r-source/blob/HEAD/src/main/arithmetic.c#L112-L120
-http://www.cs.toronto.edu/~radford/ftp/fltcompress.pdf
-
-https://stackoverflow.com/questions/23212538/float-and-double-significand-numbers-mantissa-pov
-https://github.com/wch/r-source/blob/HEAD/src/main/arithmetic.c#L112-L120
-https://graphics.stanford.edu/~seander/bithacks.html
-
-
-THE FOLLOWING FUNCTIONS ARE ADAPTED FROM PACKAGE HAVEN
-
-IEEE 754 defines binary64 as
-* 1  bit : sign
-* 11 bits: exponent
-* 52 bits: significand
-
-R stores the value "1954" in the last 32 bits: this payload marks
-the value as a NA, not a regular NaN.
-
-(Note that this discussion like most discussion of FP on the web, assumes
-a big-endian architecture - in little endian the sign bit is the last
-bit)
-*/
-
 
 
 typedef union {
@@ -98,6 +71,7 @@ Rboolean isASCII(unsigned char ch) {
 
     return(bit < 8);
 }
+
 
 
 SEXP _tag(SEXP x) {
@@ -370,10 +344,48 @@ SEXP _get_tag(SEXP x) {
 
 /*
 
+
+https://stackoverflow.com/questions/51684861/how-does-r-represent-na-internally
+https://github.com/wch/r-source/blob/HEAD/src/include/R_ext/Arith.h#L41-L45
+https://github.com/wch/r-source/blob/HEAD/src/main/arithmetic.c#L112-L120
+http://www.cs.toronto.edu/~radford/ftp/fltcompress.pdf
+
+https://stackoverflow.com/questions/23212538/float-and-double-significand-numbers-mantissa-pov
+https://github.com/wch/r-source/blob/HEAD/src/main/arithmetic.c#L112-L120
+https://graphics.stanford.edu/~seander/bithacks.html
+https://betterexplained.com/articles/understanding-big-and-little-endian-byte-order/
+
+
+
+IEEE 754 defines binary64 as
+* 1  bit : sign
+* 11 bits: exponent
+* 52 bits: significand
+
+R stores the value "1954" in the last 32 bits: this payload marks
+the value as a NA, not a regular NaN.
+
+(Note that this discussion like most discussion of FP on the web, assumes
+a big-endian architecture - in little endian the sign bit is the last bit)
+
+NA_real_   --   Big Endian
+byte 7 = 7f      1111111    MSB
+byte 6 = f0     11110000
+byte 5 = 00
+byte 4 = 00
+byte 3 = 00
+byte 2 = 00
+byte 1 = 07     00000111
+byte 0 = a2     10100010    LSB
+
+The order of the bits in a byte is the same in all computers,
+irrespective of how bytes are arranged in Big Endian or Little Endian
+
 Representations:
 NA_real_              ---------------- 16 available bits to play with
 bin: 0111111111110000 0000000000000000 00000000000000000000011110100010
 hex: 7ff00000000007a2
+
 
 negative NA_real_ (using the sign bit)
 bin: 1111111111110000000000000000000000000000000000000000011110100010
