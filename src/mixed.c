@@ -18,14 +18,10 @@ SEXP _unlockEnvironment(SEXP env) {
     return result;
 }
 
-
-
-// adapted from https://stackoverflow.com/questions/11815894/how-to-read-write-arbitrary-bits-in-c-c
+// https://stackoverflow.com/questions/11815894/how-to-read-write-arbitrary-bits-in-c-c
 #define bit_value(data, y) ((data >> y) & 1)
 #define set_bit(data, y) data |= (1 << y)
 #define clear_bit(data, y)  data &= ~(1 << y)
-
-
 
 
 typedef union {
@@ -43,13 +39,13 @@ typedef union {
 #ifdef WORDS_BIGENDIAN
 // First two bytes are sign & exponent
 // Last four bytes (that is, 32 bits) are 1954
-const int WORD = 1;
-const int BYTE_1 = 2;
-const int BYTE_2 = 3;
+static const int WORD = 1;
+static const int BYTE_1 = 2;
+static const int BYTE_2 = 3;
 #else
-const int WORD = 2;
-const int BYTE_1 = 5;
-const int BYTE_2 = 4;
+static const int WORD = 2;
+static const int BYTE_1 = 5;
+static const int BYTE_2 = 4;
 #endif
 
 
@@ -68,12 +64,6 @@ Rboolean isASCII(unsigned char ch) {
     
     int bit = 0;
     unsigned int a;
-    // printf("char:%hhu\n", ch);
-
-    // for (int bit = 15; bit >= 0; bit--) {
-    //     printf("%d", bit_value(ch, bit));
-    // }
-    // printf("\n");
 
     for(a = 0; ch; ch >>=1) {
         bit++;
@@ -148,12 +138,15 @@ SEXP _tag(SEXP x) {
             
             y.byte[BYTE_1] = CHAR(STRING_ELT(x, i))[firstminus];
             if (firstminus) {
-                y.byte[BYTE_1] *= -1;
+                set_bit(y.byte[BYTE_1], 7);
             }
 
             y.byte[BYTE_2] = CHAR(STRING_ELT(x, i))[firstminus + 1 + thirdminus];
             if (thirdminus) {
-                y.byte[BYTE_2] *= -1;
+                set_bit(y.byte[BYTE_2], 7);
+                // NOT:
+                // y.byte[BYTE_2] *= -1;
+                // because the second byte migth be empty (zero), e.g. "-a-"
             }
 
             REAL(out)[i] = y.value;
@@ -187,15 +180,11 @@ SEXP _extract_tag (double xi) {
             ieee_double8 y;
             y.value = xi;
 
-            Rboolean firstminus = y.byte[BYTE_1] < 0;
-            if (firstminus) {
-                y.byte[BYTE_1] *= -1;
-            }
+            Rboolean firstminus = bit_value(y.byte[BYTE_1], 7) > 0;
+            Rboolean thirdminus = bit_value(y.byte[BYTE_2], 7) > 0;
 
-            Rboolean thirdminus = y.byte[BYTE_2] < 0;
-            if (thirdminus) {
-                y.byte[BYTE_2] *= -1;
-            }
+            clear_bit(y.byte[BYTE_1], 7);
+            clear_bit(y.byte[BYTE_2], 7);
 
             int pos = 0;
             
@@ -220,7 +209,7 @@ SEXP _extract_tag (double xi) {
                     tag[pos] = WILDCARD;
                     pos++;
                 }
-
+                
                 if (y.byte[BYTE_2] != '\0') {
                     tag[pos] = y.byte[BYTE_2];
                     pos++;
@@ -309,6 +298,7 @@ http://www.cs.toronto.edu/~radford/ftp/fltcompress.pdf
 https://stackoverflow.com/questions/23212538/float-and-double-significand-numbers-mantissa-pov
 https://graphics.stanford.edu/~seander/bithacks.html
 https://betterexplained.com/articles/understanding-big-and-little-endian-byte-order/
+https://bytes.com/topic/c/answers/688073-get-memory-representation-double
 
 
 
