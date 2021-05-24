@@ -1,28 +1,31 @@
 `tag` <- function(...) {
     x <- as.character(c(...))
-    ln <- logical(length(x))
-    numbers <- unlist(lapply(x, possibleNumeric))
-    if (any(numbers)) {
-        ln[numbers] <- abs(asNumeric(x[numbers])) > 32767
-    }
-    
-    if (any(ln)) {
-        large_numbers <- as.numeric(sort(unique(x[ln])))
-        
-        if (length(large_numbers) < length(letters)) {
-            names(large_numbers) <- paste0("-", letters[seq_along(large_numbers)], "-")
-            x[ln] <- names(large_numbers)[match(x[ln], large_numbers)]
-        }
-        else {
-            cat("\n")
-            stop("Too many large numbers.\n\n", call. = FALSE)
-        }
-    }
 
     # https://stackoverflow.com/questions/34613761/detect-non-ascii-characters-in-a-string
     if (any(grepl("[^!-~]", x))) {
         cat("\n")
         stop("Only ASCII characters can be tagged.\n\n", call. = FALSE)
+    }
+
+    pN <- unlist(lapply(x, possibleNumeric))
+    ln <- FALSE
+
+    if (any(pN)) {
+        numbers <- asNumeric(x[pN])
+        ln <- numbers < -32768 | numbers > 32767
+    }
+    
+    if (any(ln)) {
+        large_numbers <- sort(unique(numbers[ln]))
+        
+        if (length(large_numbers) < length(letters)) {
+            names(large_numbers) <- paste0("-", letters[seq_along(large_numbers)], "-")
+            x[pN][ln] <- names(large_numbers)[match(x[pN][ln], large_numbers)]
+        }
+        else {
+            cat("\n")
+            stop("Too many large numbers.\n\n", call. = FALSE)
+        }
     }
     
     x <- .Call("_tag", x, PACKAGE = "mixed")
