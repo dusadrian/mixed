@@ -53,7 +53,7 @@ did not want to respond. It is properly identified as missing, with:
 is.na(x1)
 ```
 
-If performing a mean, for instance, the normal expectation is that value 99 would not play any role in
+But if performing a mean, for instance, the normal expectation is that value 99 would not play any role in
 the calculations (since it is *missing*). However:
 
 ```{r}
@@ -107,7 +107,16 @@ Notice that neither `user_na_to_na()`, nor employing `na.rm = TRUE` are necessar
 as an NA value (tagged, but still NA), the value 99 is not equivalent to an *empty cell*. The
 information does exist, it is just ignored in the calculations.
 
-Concatenating on this vector creates a similar one having the same class:
+The `na.rm = TRUE` is only necessary if there are unexplained missing values in the data:
+
+
+```{r}
+mean(c(x2, NA))
+
+mean(c(x2, NA), na.rm = TRUE)
+```
+
+As it can be seen, concatenating on this vector creates a similar one of the same class:
 
 ```{r}
 x2 <- c(x2, -1)
@@ -119,7 +128,7 @@ x2
 
 It should be made obvious that packages **haven** and **labelled** are excellent packages which are not
 inherently doing a bad thing: the very same result is obtained, just via a different route. Package
-**mixed** should not be necessary, if the design philosophy of these packages would be different. 
+**mixed** should not even be necessary, if the design philosophy of these packages would be different. 
 
 Another thing worth mentioning is that package **mixed** is not competing with these packages. Quite
 the contrary, it is built on exactly the same foundation and just *adds* functionality on top of them.
