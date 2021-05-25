@@ -180,7 +180,7 @@ tag(12345)
 ```
 
 Unlike package **haven** which uses one extra byte to tag the value, package **mixed** uses two extra
-bytes, and the available 16 bits can fit any number between -32767 to 32767. The numeric tagged value
+bytes, and the available 16 bits can fit any number between -32768 to 32767. The numeric tagged value
 is then properly extracted as numeric:
 
 

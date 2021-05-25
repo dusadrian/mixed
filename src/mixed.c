@@ -117,7 +117,7 @@ SEXP _tag(SEXP x) {
             }
         }
 
-        if (number > 32767) {
+        if (number > 32767 + firstminus) {
              Rf_errorcall(R_NilValue, "Number(s) too large, use the R function tag().");
         }
 
@@ -180,8 +180,8 @@ SEXP _extract_tag (double xi) {
             ieee_double8 y;
             y.value = xi;
 
-            Rboolean firstminus = bit_value(y.byte[BYTE_1], 7) > 0;
-            Rboolean thirdminus = bit_value(y.byte[BYTE_2], 7) > 0;
+            Rboolean firstminus = signbit(y.byte[BYTE_1]);
+            Rboolean thirdminus = signbit(y.byte[BYTE_2]);
 
             clear_bit(y.byte[BYTE_1], 7);
             clear_bit(y.byte[BYTE_2], 7);
