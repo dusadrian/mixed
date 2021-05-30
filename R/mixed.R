@@ -1,5 +1,9 @@
 # internal
 `all_missing_values` <- function(x, na_values = NULL, na_range = NULL, labels = NULL) {
+
+    ##########
+    # Arguments na_values, na_range and labels can either be provided by the user or,
+    # if the input is a haven_labelled(_spss) objects they might already be in the attributes
     if (is.null(na_values)) {
         na_values <- attr(x, "na_values")
     }
@@ -11,11 +15,13 @@
     if (is.null(labels)) {
         labels <- attr(x, "labels", exact = TRUE)
     }
+    ##########
+
 
     misvals <- c()
 
     if (is.null(na_values) & is.null(na_range)) {
-        return(list())
+        return(misvals)
     }
 
     if (!is.null(na_values)) {
@@ -107,26 +113,20 @@
 
 # to be added in the namespace
 `unmix.mixed_labelled` <- function(x) {
-    missingValues <- attr(x, "na_index")
+    na_index <- attr(x, "na_index")
     attrx <- attributes(x)
-    attrx$missingValues <- NULL
     
     # this is necessary to replace those values
     # (because of the "[<-.mixed_labelled" method)
     attributes(x) <- NULL # or x <- unclass(x), but I find this cleaner
-    if (!is.null(missingValues)) {
+    if (!is.null(na_index)) {
         # x <- ifelse(!is.na(missingValues), missingValues, x)
-        x[as.numeric(names(missingValues))] <- unname(missingValues)
+        x[na_index] <- likely_mode(names(na_index))
     }
     
-    attrx$class <- setdiff(attrx$class, "mixed_labelled")
     attrx$na_values <- NULL
     attrx$na_range <- NULL
     attrx$na_index <- NULL
-
-    if (identical(attrx$class, "integer") || identical(attrx$class, "character")) {
-        attrx$class <- NULL
-    }
 
     attributes(x) <- attrx
     return(x)
@@ -258,21 +258,23 @@
     structure(x, class = c("mixed_labelled", other_classes, class(x)))
 }
 
+`likely_mode` <- function(x) {
+    if (admisc::possibleNumeric(x)) {
+        x <- admisc::asNumeric(x)
+        if (admisc::wholeNumeric(x)) {
+            x <- as.integer(x)
+        }
+    }
+    return(x)
+}
+
 
 `[.mixed_labelled` <- function(x, i, ...) {
     
     missings <- rep(NA, length(x))
     na_index <- attr(x, "na_index")
-    nms <- names(na_index)
 
-    if (admisc::possibleNumeric(nms)) {
-        nms <- admisc::asNumeric(nms)
-        if (admisc::wholeNumeric(nms)) {
-            nms <- as.integer(nms)
-        }
-    }
-
-    missings[na_index] <- nms
+    missings[na_index] <- likely_mode(names(na_index))
     
     x <- NextMethod()
     missings <- missings[i]
@@ -364,4 +366,118 @@
     }
 
     return(res)
+}
+
+
+
+`==.mixed_labelled` <- function(e1, e2) {
+    return(unclass(unmix(e1)) == unclass(unmix(e2)))
+}
+
+`!=.mixed_labelled` <- function(e1, e2) {
+    return(unclass(unmix(e1)) != unclass(unmix(e2)))
+}
+
+`<=.mixed_labelled` <- function(e1, e2) {
+    return(unclass(unmix(e1)) <= unclass(unmix(e2)))
+}
+
+`<.mixed_labelled` <- function(e1, e2) {
+    return(unclass(unmix(e1)) < unclass(unmix(e2)))
+}
+
+`>=.mixed_labelled` <- function(e1, e2) {
+    return(unclass(unmix(e1)) >= unclass(unmix(e2)))
+}
+
+`>.mixed_labelled` <- function(e1, e2) {
+    return(unclass(unmix(e1)) > unclass(unmix(e2)))
+}
+
+`names<-.mixed_labelled` <- function(x, value) {
+    attr(x, "names") <- value
+    x
+}
+
+
+
+`c_mixed_labelled` <- function(dots, recursive = FALSE, use.names = TRUE) {
+    # dots <- list(...)
+    mixed <- unlist(lapply(dots, is_mixed))
+    na_values <- sort(unique(unlist(lapply(dots, function(x) attr(x, "na_values")))))
+    
+    labels <- unlist(lapply(dots, function(x) {
+        attr(x, "labels", exact = TRUE)
+    }))
+    
+    duplicates <- duplicated(labels)
+
+    if (length(wduplicates <- which(duplicates)) > 0) {
+        for (i in seq(length(wduplicates))) {
+            if (length(unique(names(labels[labels == labels[wduplicates[i]]]))) > 1) {
+                cat("\n")
+                stop(simpleError("Labels must be unique.\n\n"))
+            }
+        }
+    }
+
+    labels <- sort(labels[!duplicates])
+
+    na_range <- lapply(dots, function(x) attr(x, "na_range", exact = TRUE))
+    nulls <- unlist(lapply(na_range, is.null))
+    
+    if (all(nulls)) {
+        na_range <- NULL
+    }
+    else {
+        if (sum(nulls) == length(na_range) - 1) {
+            na_range <- unlist(na_range)
+        }
+        else {
+            compatible <- logical(length(na_range))
+            if (!is.null(na_range)) {
+                for (i in seq(1, length(na_range) - 1)) {
+                    nai <- na_range[[i]]
+                    if (is.null(nai)) {
+                        compatible[i] <- TRUE
+                    }
+                    else {
+                        for (j in seq(2, length(na_range))) {
+                            naj <- na_range[[j]]
+                            if (is.null(naj)) {
+                                compatible[j] <- TRUE
+                            }
+                            else {
+                                if (any(is.element(seq(nai[1], nai[2]), seq(naj[1], naj[2]))) > 0) {
+                                    compatible[i] <- TRUE
+                                    compatible[j] <- TRUE
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (any(!compatible)) {
+                cat("\n")
+                stop(simpleError("Incompatible NA ranges.\n\n"))
+            }
+
+            na_range <- range(unlist(na_range))
+        }
+    }
+
+    dots <- unlist(lapply(dots, function(x) {
+        if (is_mixed(x)) x <- unmix(x)
+        attributes(x) <- NULL
+        return(x)
+    }))
+
+    mixed_labelled(
+        dots,
+        labels = labels,
+        na_values = na_values,
+        na_range = na_range,
+        label = attr(dots[[which(mixed)[1]]], "label", exact = TRUE)
+    )
 }

@@ -102,7 +102,23 @@
         }
 
 
-        # do.call("unlockBinding", list(sym = "c", env = env))
+        do.call("unlockBinding", list(sym = "c", env = env))
+        
+        env$c <- function(..., recursive = FALSE, use.names = TRUE) {
+            dots <- list(...)
+            any_mixed <- FALSE
+            
+            if (all(unlist(lapply(dots, is.atomic)))) {
+                any_mixed <- any(unlist(lapply(dots, is_mixed)))
+            }
+
+            if (any_mixed) {
+                return(c_mixed_labelled(dots))
+            }
+            else {
+                do.call(.Primitive("c"), c(dots, list(recursive = recursive, use.names = use.names)))
+            }
+        }
         
     }
     
