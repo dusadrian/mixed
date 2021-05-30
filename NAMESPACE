@@ -1,98 +1,42 @@
 
-import(haven)
-import(labelled)
-import(vctrs)
 importFrom("stats", "median", "na.omit")
-importFrom("utils", "assignInNamespace")
-useDynLib(mixed, .registration = TRUE)
+importFrom("admisc", "possibleNumeric", "wholeNumeric", "asNumeric", "unlockEnvironment")
 
 export(
     as_mixed,
     is_mixed,
+    format_mixed,
     mixed_labelled,
-    unmix,
-    order_labelled,
-    sort_labelled,
-    names_values,
-    to_labels,
-    tag,
-    has_tag,
-    get_tag,
-    untag,
-    isElement,
-    is_tagged_string,
-    format_tagged,
-    order_tagged,
-    sort_tagged,
-    .onAttach
+    unmix
+
+    # order_labelled,
+    # sort_labelled,
+    # names_values,
+    # to_labels,
+    # is_tagged_string
 )
 
 S3method(as_mixed, default)
-S3method(unmix, default)
-
-S3method(unmix, data.frame)
+S3method(as_mixed, haven_labelled)
 S3method(as_mixed, data.frame)
 
-S3method(unmix, mixed_labelled)
-S3method(na_values, mixed_labelled)
-S3method(na_range, mixed_labelled)
-S3method("na_values<-", mixed_labelled)
-S3method("na_range<-", mixed_labelled)
-S3method("val_labels<-", mixed_labelled)
-S3method(as_factor, mixed_labelled)
-S3method(drop_unused_value_labels, mixed_labelled)
-S3method(vec_ptype_full, mixed_labelled)
-S3method(cbind, mixed_labelled)
 
-S3method(as_mixed, haven_labelled)
-S3method(mean, haven_labelled)
-S3method(duplicated, haven_labelled)
-S3method(unique, haven_labelled)
-S3method(anyDuplicated, haven_labelled)
-S3method("==", haven_labelled)
-S3method("!=", haven_labelled)
-S3method("<=", haven_labelled)
-S3method("<", haven_labelled)
-S3method(">=", haven_labelled)
-S3method(">", haven_labelled)
-S3method("[<-", haven_labelled)
+S3method(unmix, default)
+S3method(unmix, data.frame)
 
-S3method(mean, tagged)
-S3method(median, tagged)
-S3method(duplicated, tagged)
-S3method(unique, tagged)
-S3method(sort, tagged)
-S3method(print, tagged)
-S3method(format, tagged)
-S3method(as.character, tagged)
-S3method(levels, tagged)
-S3method("names<-", tagged)
-S3method("==", tagged)
-S3method("!=", tagged)
-S3method("<=", tagged)
-S3method("<", tagged)
-S3method(">=", tagged)
-S3method(">", tagged)
-S3method(vec_ptype2, double.tagged)
-S3method(vec_ptype2, integer.tagged)
-S3method(vec_ptype2, character.tagged)
-S3method(vec_ptype2, tagged.double)
-S3method(vec_ptype2, tagged.integer)
-S3method(vec_ptype2, tagged.character)
-S3method(vec_ptype2, tagged.tagged)
-
-S3method(vec_cast, double.tagged)
-S3method(vec_cast, integer.tagged)
-S3method(vec_cast, character.tagged)
-S3method(vec_cast, tagged.tagged)
-S3method(vec_cast, tagged.double)
-S3method(vec_cast, tagged.integer)
-S3method(vec_cast, tagged.character)
+S3method(print, mixed_labelled)
 
 
-S3method(vec_arith, tagged)
-S3method(vec_arith.tagged, default)
-S3method(vec_arith.tagged, tagged)
-S3method(vec_arith.tagged, numeric)
-S3method(vec_arith.numeric, tagged)
-S3method(vec_math, tagged)
+# S3method(as_factor, mixed_labelled)
+# S3method(levels, mixed_labelled)
+# S3method(drop_unused_value_labels, mixed_labelled)
+# S3method(cbind, mixed_labelled)
+
+
+# S3method("names<-", mixed_labelled)
+# S3method("==", mixed_labelled)
+# S3method("!=", mixed_labelled)
+# S3method("<=", mixed_labelled)
+# S3method("<", mixed_labelled)
+# S3method(">=", mixed_labelled)
+# S3method(">", mixed_labelled)

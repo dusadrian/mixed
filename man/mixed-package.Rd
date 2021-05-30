@@ -28,7 +28,7 @@ packages.
     \tabular{ll}{
     Package: \tab mixed\cr
     Type: \tab Package\cr
-    Version: \tab 0.7\cr
+    Version: \tab 0.5\cr
     Date: \tab 2021-05-13\cr
     License: \tab GPL-v3\cr
     }

@@ -1,12 +1,17 @@
+# internal
+`all_missing_values` <- function(x, na_values = NULL, na_range = NULL, labels = NULL) {
+    if (is.null(na_values)) {
+        na_values <- attr(x, "na_values")
+    }
 
-`is_mixed` <- function(x) {
-    inherits(x, "mixed_labelled")
-}
+    if (is.null(na_range)) {
+        na_range <- attr(x, "na_range")
+    }
 
-`values_to_tag` <- function(x) {
-    na_values <- attr(x, "na_values")
-    na_range <- attr(x, "na_range")
-    labels <- attr(x, "labels", exact = TRUE)
+    if (is.null(labels)) {
+        labels <- attr(x, "labels", exact = TRUE)
+    }
+
     misvals <- c()
 
     if (is.null(na_values) & is.null(na_range)) {
@@ -18,7 +23,7 @@
     }
 
     if (is.numeric(x)) {
-        if (is.numeric(labels)) {
+        if (!is.null(labels)) {
             x <- c(x, unname(unclass(labels)))
         }
 
@@ -35,98 +40,53 @@
         }
     }
 
-    large_numbers <- logical(length(misvals))
-    numbers <- unlist(lapply(large_numbers, possibleNumeric))
-
-    if (any(numbers)) {
-        large_numbers[numbers] <- abs(asNumeric(misvals[numbers])) > 32767
-    }
-    
-    if (any(!numbers)) {
-        if (any(nchar(misvals[!numbers]) > 2)) {
-            cat("\n")
-            stop(simpleError("Non-numerical missing values should have at most 2 characters.\n\n"))
-        }
-    }
-
-    result <- list(justright = misvals[!large_numbers], large_numbers = misvals[large_numbers])
-    
-    if (length(result$large_numbers) > length(letters)) {
-        cat("\n")
-        stop(simpleError("Too large span of missing values.\n\n"))
-    }
-
-    if (length(result$large_numbers) > 0) {
-        names(result$large_numbers) <- letters[seq(length(result$large_numbers))]
-    }
-
-    return(result)
+    return(misvals)
 }
 
+# to be added in the namespace
 `as_mixed` <- function(x, ...) {
     UseMethod("as_mixed")
 }
 
+# to be added in the namespace
+`is_mixed` <- function(x) {
+    inherits(x, "mixed_labelled")
+}
+
+# to be added in the namespace
 `as_mixed.default` <- function(x, ...) {
     return(x)
 }
 
+# to be added in the namespace
 `as_mixed.haven_labelled` <- function(x, ...) {
-    
-    if (is_mixed(x) || !is.atomic(x) || is.character(x)) {
+    if (is_mixed(x) || !is.atomic(x)) {
         return(x)
     }
 
-    class(x) <- setdiff(class(x), "haven_labelled_spss")
-    attrx <- attributes(x)
+    misvals <- all_missing_values(x)
+
+    na_values <- attr(x, "na_values")
+    na_range <- attr(x, "na_range")
     labels <- attr(x, "labels", exact = TRUE)
-    tagged_values <- values_to_tag(x)
+    label <- attr(x, "label", exact = TRUE)
 
-    x <- untag(x)
     attributes(x) <- NULL
+    missingValues(x)[is.element(x, misvals)] <- x[is.element(x, misvals)]
 
-    if (!is.null(unlist(tagged_values))) {
-        if (length(tagged_values$justright) > 0) {
-            x[is.element(x, tagged_values$justright)] <- tag(x[is.element(x, tagged_values$justright)])
-        }
-        
-        if (length(tagged_values$large_numbers) > 0) {
-            nms <- names(tagged_values$large_numbers)
-            x[is.element(x, tagged_values$large_numbers)] <- tag(names(tagged_values$large_numbers)[match(x[is.element(x, tagged_values$large_numbers)], tagged_values$large_numbers)])
-            attrx$large_numbers <- tagged_values$large_numbers
-        }
-    }
-
-    if (!is.null(labels) && is.numeric(labels)) {
-        
-        if (length(tagged_values$justright) > 0) {
-            labels[is.element(labels, tagged_values$justright)] <- tag(labels[is.element(labels, tagged_values$justright)])
-        }
-
-        if (length(tagged_values$large_numbers) > 0) {
-            labels[is.element(labels, tagged_values$large_numbers)] <- tag(names(tagged_values$large_numbers)[match(labels[is.element(labels, tagged_values$large_numbers)], tagged_values$large_numbers)])
-            attr(labels, "large_numbers") <- tagged_values$large_numbers
-        }
-
-        # add these classes to allow printing tagged NA values when typing:
-        # attr(x, "labels")
-        
-        if (any(has_tag(labels))) {
-            class(labels) <- c("tagged", "vctrs_vctr", class(labels))
-        }
-        
-        attrx$labels <- labels
-    }
-
-    attrx$class <- c("mixed_labelled", "haven_labelled", "vctrs_vctr", class(x))
-    attributes(x) <- attrx
-    
+    attr(x, "na_values") <- na_values
+    attr(x, "na_range") <- na_range
+    attr(x, "labels") <- labels
+    attr(x, "label") <- label
     return(x)
 }
 
+# to be added in the namespace
 `as_mixed.data.frame` <- function(x, ..., only_labelled = TRUE) {
     if (only_labelled) {
-        labelled <- vapply(x, is.labelled, logical(1))
+        labelled <- unlist(lapply(x, function(x) {
+            inherits(x, "haven_labelled")
+        }))
         x[labelled] <- lapply(x[labelled], as_mixed, ...)
     } else {
         x[] <- lapply(x, as_mixed, ...)
@@ -135,57 +95,52 @@
     return(x)
 }
 
+# to be added in the namespace
 `unmix` <- function(x) {
     UseMethod("unmix")
 }
 
+# to be added in the namespace
 `unmix.default` <- function(x) {
     return(x)
 }
 
+# to be added in the namespace
 `unmix.mixed_labelled` <- function(x) {
-    # `unmx` <- function(x) {
+    missingValues <- attr(x, "na_index")
     attrx <- attributes(x)
-    tagged <- has_tag(x)
-    attributes(x) <- NULL
+    attrx$missingValues <- NULL
     
-    if (any(tagged)) {
-        x[tagged] <- get_tag(x[tagged])
+    # this is necessary to replace those values
+    # (because of the "[<-.mixed_labelled" method)
+    attributes(x) <- NULL # or x <- unclass(x), but I find this cleaner
+    if (!is.null(missingValues)) {
+        # x <- ifelse(!is.na(missingValues), missingValues, x)
+        x[as.numeric(names(missingValues))] <- unname(missingValues)
+    }
+    
+    attrx$class <- setdiff(attrx$class, "mixed_labelled")
+    attrx$na_values <- NULL
+    attrx$na_range <- NULL
+    attrx$na_index <- NULL
+
+    if (identical(attrx$class, "integer") || identical(attrx$class, "character")) {
+        attrx$class <- NULL
     }
 
-    labels <- attrx$labels
-    
-    # ------------------
-    if (!is.null(labels)) {
-        tagged <- has_tag(labels)
-
-        # ------------------
-        # the vec_data() part is VERY important to stay here, BEFORE replacing the values in the
-        # labels because of my the choice to automatically transform any (actual) value into a 
-        # tagged NA when adding (and the same happens when replacing) values into this object
-        labels <- vec_data(labels)
-        
-        if (any(tagged)) {
-            labels[tagged] <- get_tag(labels[tagged])
-        }
-
-        attr(labels, "large_numbers") <- NULL # just in case
-        attrx$labels <- labels
-    }
-
-    attrx$large_numbers <- NULL
-    attrx$class <- c("haven_labelled_spss", setdiff(attrx$class, "mixed_labelled"))
     attributes(x) <- attrx
     return(x)
 }
 
+# to be added in the namespace
 `unmix.data.frame` <- function(x) {
     mixed <- vapply(x, is_mixed, logical(1))
-    x[mixed] <- lapply(x[mixed], untag)
+    x[mixed] <- lapply(x[mixed], unmix)
     
     return(x)
 }
 
+# no export
 `validate_labelled` <- function(x = double(), labels = NULL, label = NULL,
                                 na_values = NULL, na_range = NULL, ...) {
     
@@ -202,11 +157,6 @@
         if (any(duplicated(stats::na.omit(labels)))) {
             stop(simpleError("`labels` must be unique."))
         }
-
-        if (!vec_is(unclass(labels), x)) {
-            cat("\n")
-            stop(simpleError("`labels` must be same type as `x`.\n\n"))
-        }
     }
 
     if (!is.null(label) && (!is.atomic(label) || !is.character(label) || length(label) != 1)) {
@@ -217,7 +167,7 @@
     if (!is.null(na_values)) {
         if (any(is.na(na_values))) {
             cat("\n")
-            stop(simpleError("`na_values` can not contain missing values.\n\n"))
+            stop(simpleError("`na_values` should not contain NA values.\n\n"))
         }
     }
 
@@ -241,169 +191,177 @@
     }
 }
 
-`new_labelled` <- function(x = double(), labels = NULL, label = NULL,
-                    na_values = NULL, na_range = NULL, ..., class = character()) {
-    
-    if (mode(x) == mode(labels)) {
-        if (typeof(x) != typeof(labels)) {
-            mode(labels) <- typeof(x)
-        }
-    }
-    
-    dots <- list(...)
-    if (!is.null(labels)) {
-        if (is.element("large_numbers", names(dots))) {
-            if (length(dots$large_numbers) > 0) {
-                attr(labels, "large_numbers") <- dots$large_numbers
-            }
-        }
-    }
-    
-    new_vctr(x,
-        labels = labels,
-        label = label,
-        na_values = na_values,
-        na_range = na_range,
-        ...,
-        class = c(class, "haven_labelled"),
-        inherit_base_type = TRUE
-    )
-}
 
+# to be added in the namespace
 `mixed_labelled` <- function(x = double(), labels = NULL, na_values = NULL,
                           na_range = NULL, label = NULL, ...) {
-
-    x <- vec_data(x)
-    if (inherits(labels, "tagged")) {
-        if (is.character(untag(labels))) {
-            cat("\n")
-            stop(simpleError("Tagged values in `labels` have to be numeric.\n\n"))
-        }
+    if (is_mixed(x)) {
+        return(x)
     }
 
-    labels <- stats::setNames(vec_cast(vec_data(labels), x, x_arg = "labels", to_arg = "x"), names(labels))
+    if (inherits(x, "haven_labelled")) {
+        return(as_mixed(x))
+    }
+
+    attributes(x) <- NULL
     validate_labelled(x, labels, label, na_values, na_range)
 
-    if (is.null(na_values) && is.null(na_range)) {
-        return(new_labelled(x, labels = labels, label = label))
+    misvals <- all_missing_values(x, na_values, na_range, labels)
+    
+    missingValues(x)[is.element(x, misvals)] <- x[is.element(x, misvals)]
+
+    attr(x, "na_values") <- na_values
+    attr(x, "na_range") <- na_range
+    attr(x, "labels") <- labels
+
+    return(x)
+
+}
+
+
+`missingValues` <- function(x) {
+    
+    mv <- rep(NA, length(x))
+    
+    if (is_mixed(x)) {
+        misvals <- attr(x, "na_index")
+        mv[as.numeric(names(misvals))] <- misvals
     }
 
-    dots <- list(...)
-    declared <- logical(length(x))
-    tagged <- has_tag(x)
+    return(mv)
+}
 
-    if (is.character(na_values) || any(is.na(na_values))) {
+
+`missingValues<-` <- function(x, value) {
+    
+    class(x) <- setdiff(class(x), "mixed_labelled")
+    other_classes <- setdiff(class(x), c("integer", "double", "character", "numeric", "complex", "haven_labelled", "haven_labelled_spss", "vctrs_vctr"))
+    pn <- admisc::possibleNumeric(x)
+    x[!is.na(value)] <- NA
+    
+    
+    na_index <- which(!is.na(value))
+    value <- value[!is.na(value)]
+
+    if (pn || all(is.na(x))) {
+        x <- admisc::asNumeric(x)
+        class(x) <- ifelse(admisc::wholeNumeric(x), "integer", "double")
+    }
+    else {
+        class(x) <- "character"
+    }
+
+    names(na_index) <- value
+    
+    attr(x, "na_index") <- na_index
+    # print(attributes(x))
+    structure(x, class = c("mixed_labelled", other_classes, class(x)))
+}
+
+
+`[.mixed_labelled` <- function(x, i, ...) {
+    
+    missings <- rep(NA, length(x))
+    na_index <- attr(x, "na_index")
+    nms <- names(na_index)
+
+    if (admisc::possibleNumeric(nms)) {
+        nms <- admisc::asNumeric(nms)
+        if (admisc::wholeNumeric(nms)) {
+            nms <- as.integer(nms)
+        }
+    }
+
+    missings[na_index] <- nms
+    
+    x <- NextMethod()
+    missings <- missings[i]
+    missingValues(x) <- missings
+    # print(attributes(x))
+    x
+}
+
+
+
+`[<-.mixed_labelled` <- function(x, i, value) {
+    missings <- rep(NA, length(x))
+    class(x) <- setdiff(class(x), "mixed_labelled")
+    x[i] <- value
+    missings[i] <- missingValues(value)
+
+    missingValues(x) <- missings
+    # print(attributes(x))
+    x
+}
+
+
+
+`format_mixed` <- function(x, digits = getOption("digits")) {
+    if (!is.atomic(x)) {
         cat("\n")
-        stop(simpleError("`na_values` has to be numeric.\n\n"))
+        stop("`x` has to be a vector.\n\n", call. = FALSE)
     }
     
-    if (!is.null(na_values) || !is.null(na_range)) {
-        if (any(tagged)) {
-            tags <- unique(get_tag(x[tagged]))
-            numeric <- unlist(lapply(tags, possibleNumeric))
-            tags <- setdiff(tags, na_values)
+    out <- format(unclass(x), digits = digits)
+    na_index <- attr(x, "na_index")
+    # return(na_index)
+    out[na_index] <- paste0("NA(", names(na_index), ")")
 
-            if (any(numeric) && !is.null(na_range)) {
-                numtags <- as.numeric(tags[numeric])
-                tags <- tags[-which(numeric)[numtags >= na_range[1] & numtags <= na_range[2]]]
-            }
-            
-            if (length(tags) > 0 && is.element("large_numbers", names(dots))) {
-                tags <- setdiff(tags, names(dots$large_numbers))
-            }
+    # format again to make sure all elements have same width
+    return(format(out, justify = "right"))
+}
 
-            if (length(tags) > 0) {
-                cat("\n")
-                stop(simpleError("There are undeclared, tagged missing values in `x`.\n\n"))
-            }
-        }
 
-        # what if there are already tagged values in x, but still
-        # untagged values in x corresponding to declared na_values...?
+`print.mixed_labelled` <- function(x, ...) {
+    print(noquote(format_mixed(x)), ...)
+}
 
-        declared <- isElement(x, na_values)
 
-        if (!is.null(na_range) && is.numeric(x)) {
-            declared <- declared | (x >= na_range[1] & x <= na_range[2])
-        }
-    }
-    
-    #---------------------------------------
-    # when `x` is a labelled object, it might have labels and label attributes
-
-    xlabels <- attr(x, "labels", exact = TRUE)
-    if (is.null(labels) & !is.null(xlabels)) {
-        labels <- xlabels
-    }
-
-    xlabel <- attr(x, "label", exact = TRUE)
-    if (is.null(label) & !is.null(xlabel)) {
-        label <- xlabel
-    }
-    
-    #---------------------------------------
-    
-    large_numbers <- NULL
-
-    if (sum(declared) > 0) {
-
-        if (!is.numeric(x)) {
-            cat("\n")
-            stop(simpleError("Missing values can be declared only for numeric variables.\n\n"))
-        }
-    
-        declared <- sort(unique(x[declared]))
+`order_mixed` <- function(x, na.last = NA, decreasing = FALSE, method = c("auto", "shell", "radix"),
+    na_values.last = NA) {
         
-        ln <- logical(length(declared))
-        pN <- unlist(lapply(declared, possibleNumeric))
-        if (any(pN)) {
-            ln[pN] <- abs(asNumeric(declared[pN])) > 32767
-        }
+    method <- match.arg(method)
+    
+    ix <- seq_along(x)
 
-        large_numbers <- declared[ln]
+    na_index <- attr(x, "na_index")
+    declared <- logical(length(x))
+    declared[na_index] <- TRUE
+    truena <- ix[is.na(x) & !declared]
+    # return(truena)    
+    ideclared <- c()
 
-        if (length(large_numbers) > length(letters)) {
-            cat("\n")
-            stop(simpleError("Too many large missing values.\n\n"))
-        }
+    if (any(declared)) {
+        x <- unclass(unmix(x))
+        # return(na_index)
+        # return(ix[na_index])
+        ideclared <- unname(na_index[order(names(na_index), decreasing = decreasing, method = method)])
+        # return(ideclared)
+    }
 
-        if (length(declared[!ln]) > 0) {
-            x[is.element(x, declared[!ln])] <- tag(x[is.element(x, declared[!ln])])
-        }
+    attributes(x) <- NULL # just in case
+    ix <- ix[!(is.na(x) | declared)]
+    x <- x[!(is.na(x) | declared)]
 
-        if (length(large_numbers) > 0) {
-            names(large_numbers) <- letters[seq(length(large_numbers))]
-            x[is.element(x, large_numbers)] <- tag(letters[match(x[is.element(x, large_numbers)], large_numbers)])
-        }
-        else {
-            large_numbers <- NULL
-        }
+    res <- c()
+    if (isFALSE(na.last)) {
+        res <- truena
+    }
 
-        if (!is.null(labels)) {
-            if (length(declared[!ln]) > 0) {
-                labels[is.element(labels, declared[!ln])] <- tag(labels[is.element(labels, declared[!ln])])
-            }
+    if (isFALSE(na_values.last)) {
+        res <- c(res, ideclared)
+    }
 
-            if (length(large_numbers) > 0) {
-                labels[is.element(labels, large_numbers)] <- tag(letters[match(labels[is.element(labels, large_numbers)], large_numbers)])
-                attr(labels, "large_numbers") <- large_numbers
-            }
-
-            # add these classes to allow printing tagged NA values when typing, for instance:
-            # attr(x, "labels")
-
-            if (any(has_tag(labels))) {
-                class(labels) <- c("tagged", "vctrs_vctr", class(labels))
-            }
-        }
+    res <- c(res, ix[order(unclass(x), decreasing = decreasing, method = method)])
+    # return(ideclared)
+    
+    if (isTRUE(na_values.last)) {
+        res <- c(res, ideclared)
     }
     
-    new_labelled(x,
-        labels = labels,
-        label = label,
-        large_numbers = large_numbers,
-        na_values = na_values,
-        na_range = na_range,
-        class = "mixed_labelled"
-    )
+    if (isTRUE(na.last)) {
+        res <- c(res, truena)
+    }
+
+    return(res)
 }
