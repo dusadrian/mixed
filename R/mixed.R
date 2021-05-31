@@ -371,29 +371,37 @@
 }
 
 
+tol <- .Machine$double.eps^0.5
+
 
 `==.mixed_labelled` <- function(e1, e2) {
-    return(admisc::aeqb(unclass(unmix(e1)), unclass(unmix(e2))))
+    return(abs(unclass(unmix(e1)) - unclass(unmix(e2))) < tol)
+    # return(admisc::aeqb(unclass(unmix(e1)), unclass(unmix(e2))))
 }
 
 `!=.mixed_labelled` <- function(e1, e2) {
-    return(unclass(unmix(e1)) != unclass(unmix(e2)))
+    return(abs(unclass(unmix(e1)) - unclass(unmix(e2))) < tol)
+    # return(admisc::aneqb(unclass(unmix(e1)), unclass(unmix(e2))))
 }
 
 `<=.mixed_labelled` <- function(e1, e2) {
-    return(admisc::alteb(unclass(unmix(e1)), unclass(unmix(e2))))
+    return(unclass(unmix(e1)) < (unclass(unmix(e2)) + tol))
+    # return(admisc::alteb(unclass(unmix(e1)), unclass(unmix(e2))))
 }
 
 `<.mixed_labelled` <- function(e1, e2) {
-    return(unclass(unmix(e1)) < unclass(unmix(e2)))
+    return(unclass(unmix(e1)) < (unclass(unmix(e2)) - tol))
+    # return(admisc::altb(unclass(unmix(e1)), unclass(unmix(e2))))
 }
 
 `>=.mixed_labelled` <- function(e1, e2) {
-    return(admisc::agteb(unclass(unmix(e1)), unclass(unmix(e2))))
+    return((unclass(unmix(e1)) + tol) > unclass(unmix(e2)))
+    # return(admisc::agteb(unclass(unmix(e1)), unclass(unmix(e2))))
 }
 
 `>.mixed_labelled` <- function(e1, e2) {
-    return(unclass(unmix(e1)) > unclass(unmix(e2)))
+    return((unclass(unmix(e1)) - tol) > unclass(unmix(e2)))
+    # return(admisc::agtb(unclass(unmix(e1)), unclass(unmix(e2))))
 }
 
 `names<-.mixed_labelled` <- function(x, value) {

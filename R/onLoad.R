@@ -1,6 +1,6 @@
 `.onLoad` <- function(...) {
 
-    if (unlockEnvironment(asNamespace("base"))) {
+    if (admisc::unlockEnvironment(asNamespace("base"))) {
 
         env <- as.environment("package:base")
         do.call("unlockBinding", list(sym = "print.data.frame", env = env))
@@ -107,8 +107,8 @@
             dots <- list(...)
             any_mixed <- FALSE
             
-            if (all(unlist(lapply(dots, is.atomic)))) {
-                any_mixed <- any(unlist(lapply(dots, is_mixed)))
+            if (all(vapply(dots, is.atomic, logical(1L)))) {
+                any_mixed <- any(vapply(dots, is_mixed, logical(1L)))
             }
 
             if (any_mixed) {
@@ -128,14 +128,16 @@
             decreasing <- as.logical(decreasing)
             
             if (length(z) == 1L && is.numeric(x <- z[[1L]]) && !is.object(x) && length(x) > 0) {
-                if (.Internal(sorted_fpass(x, decreasing, na.last))) {
+                if (eval(parse(text = ".Internal(sorted_fpass(x, decreasing, na.last))"))) {
                     return(seq_along(x))
                 }
             }
             
             method <- match.arg(method)
             
-            if (any(unlist(lapply(z, function(x) is.object(x) && !is_mixed(x))))) {
+            if (any(vapply(z, function(x) {
+                    is.object(x) && !is_mixed(x)
+                }, logical(1L)))) {
                 z <- lapply(z, function(x) if (is.object(x)) 
                     as.vector(xtfrm(x))
                 else x)
@@ -145,7 +147,7 @@
             
             if (method == "auto") {
                 useRadix <- all(vapply(z, function(x) {
-                    (is.numeric(x) || is.factor(x) || is.logical(x)) &&  is.integer(length(x))
+                    (is.numeric(x) || is.factor(x) || is.logical(x)) && is.integer(length(x))
                 }, logical(1L)))
                 method <- ifelse (useRadix, "radix", "shell")
             }
@@ -155,12 +157,12 @@
             }
 
             if (method != "radix" && !is.na(na.last)) {
-                return(.Internal(order(na.last, decreasing, ...)))
+                return(eval(parse(text = ".Internal(order(na.last, decreasing, ...))")))
             }
 
             if (method == "radix") {
                 decreasing <- rep_len(as.logical(decreasing), length(z))
-                return(.Internal(radixsort(na.last, decreasing, FALSE, TRUE, ...)))
+                return(eval(parse(text = ".Internal(radixsort(na.last, decreasing, FALSE, TRUE, ...))")))
             }
 
             if (any(diff((l.z <- lengths(z)) != 0L))) {
