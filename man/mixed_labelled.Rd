@@ -51,7 +51,7 @@ difference in the treatment of (declared) missing values.
 In package \bold{haven}, existing values are treated as if they were missing. By contrast,
 in package \bold{mixed} the NA values are treated as existing values.
 
-This difference is fundamental and points to a serious shortcoming in package \bold{haven}:
+This difference is fundamental and points to an inconsistency in package \bold{haven}:
 while existing values can be identified as missing using the function \code{is.na()}, they
 are in fact present in the vector and other packages (most importantly the core ones) will
 not know these values should be treated as missing.
@@ -59,9 +59,9 @@ not know these values should be treated as missing.
 Consequently, the existing values are interpreted as missing only by package haven.
 Statistical procedures will use those values as just like they were valid values.
 
-Package \bold{mixed} approaches the problem in the exact opposite way: instead of treating
-existing values as missing, it treats (certain) NA values as existing. This way, it does
-not run into the risk of using values which should not be used.
+Package \bold{mixed} approaches the problem in exactly the opposite way: instead of
+treating existing values as missing, it treats (certain) NA values as existing. This way,
+it does not run into the risk of using values which should not be used.
 
 The function \code{unmix()} replaces the NA entries into their original numeric values, and
 drops all attributes related to missing values: \code{na_values}, \code{na_range} and
@@ -82,8 +82,7 @@ x > 0
 x == -1
 
 
-# already defined new missing values are automatically tagged
-x <- c(x, 2, -1)
-x
+# when newly added values are already declared as missing, they are automatically coerced
+c(x, 2, -1)
 
 }

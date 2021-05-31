@@ -9,14 +9,22 @@ export(
     mixed_labelled,
     unmix,
 
-    order_mixed
+    order_mixed,
+    missing_values,
+    "missing_values<-",
+    missing_range,
+    "missing_range<-",
+    value_labels,
+    "value_labels<-",
+    variable_label,
+    "variable_label<-"
     # sort_mixed
     # to_labels,
     # is_tagged_string
 )
 
 S3method(as_mixed, default)
-S3method(as_mixed, haven_labelled)
+S3method(as_mixed, haven_labelled_spss)
 S3method(as_mixed, data.frame)
 
 
@@ -27,6 +35,34 @@ S3method(unmix, mixed_labelled)
 S3method(print, mixed_labelled)
 S3method("[", mixed_labelled)
 S3method("[<-", mixed_labelled)
+
+S3method(missing_values, default)
+S3method(missing_values, haven_labelled_spss)
+S3method(missing_values, mixed_labelled)
+S3method(missing_values, data.frame)
+S3method("missing_values<-", default)
+S3method("missing_values<-", mixed_labelled)
+
+S3method(missing_range, default)
+S3method(missing_range, haven_labelled_spss)
+S3method(missing_range, mixed_labelled)
+S3method(missing_range, data.frame)
+S3method("missing_range<-", default)
+S3method("missing_range<-", mixed_labelled)
+
+S3method(value_labels, default)
+S3method(value_labels, haven_labelled_spss)
+S3method(value_labels, mixed_labelled)
+S3method(value_labels, data.frame)
+S3method("value_labels<-", default)
+S3method("value_labels<-", mixed_labelled)
+
+S3method(variable_label, default)
+S3method(variable_label, haven_labelled_spss)
+S3method(variable_label, mixed_labelled)
+S3method(variable_label, data.frame)
+S3method("variable_label<-", default)
+S3method("variable_label<-", mixed_labelled)
 
 
 # S3method(as_factor, mixed_labelled)
