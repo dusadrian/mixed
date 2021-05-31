@@ -261,6 +261,23 @@
     return(x)
 }
 
+`likely_type` <- function(x) {
+    type <- NULL
+    if (is.numeric(x)) {
+        type <- "numeric"
+        if (is.integer(x)) {
+            type <- "integer"
+        }
+    }
+    else if (is.character(x)) {
+        type <- "character"
+    }
+
+    if (!is.null(type)) {
+        return(paste0("<", type, ">"))
+    }
+}
+
 
 `[.mixed_labelled` <- function(x, i, ...) {
     
@@ -304,9 +321,45 @@
     return(format(out, justify = "right"))
 }
 
+print_labels <- function(x, name = NULL) {
+    if (!is_mixed(x)) {
+        stop("x must be a mixed labelled vector", call. = FALSE)
+    }
+
+    labels <- attr(x, "labels", exact = TRUE)
+
+    if (length(labels) == 0) {
+        return(invisible(x))
+    }
+
+    cat("\nLabels:", name, "\n", sep = "")
+
+    print(data.frame(value = unname(labels), label = names(labels), row.names = NULL), row.names = FALSE)
+
+    invisible(x)
+}
+
 
 `print.mixed_labelled` <- function(x, ...) {
+    label <- variable_label(x)
+    if (!is.null(label)) {
+        label <- paste0(":", label)
+    }
+
+    cat(paste0("<mixed_labelled", likely_type(x), "[", length(x), "]>", label, "\n"))
     print(noquote(format_mixed(x)), ...)
+
+    na_values <- attr(x, "na_values")
+    if (!is.null(na_values)) {
+        cat(paste0("Missing values: ", paste(na_values, collapse = ", "), "\n"))
+    }
+
+    na_range <- attr(x, "na_range")
+    if (!is.null(na_range)) {
+        cat(paste0("Missing range:  [", paste(na_range, collapse = ", "), "]"))
+    }
+
+    print_labels(x)
 }
 
 
