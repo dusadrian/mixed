@@ -284,7 +284,6 @@
 }
 
 
-
 `[<-.mixed_labelled` <- function(x, i, value) {
     missings <- rep(NA, length(x))
     class(x) <- setdiff(class(x), "mixed_labelled")
@@ -295,7 +294,6 @@
     # print(attributes(x))
     x
 }
-
 
 
 `format_mixed` <- function(x, digits = getOption("digits")) {
@@ -319,30 +317,35 @@
 }
 
 
-`order_mixed` <- function(x, na.last = NA, decreasing = FALSE, method = c("auto", "shell", "radix"),
-    na_values.last = NA) {
-        
+
+
+
+`order_mixed` <- function(x, na.last = NA, decreasing = FALSE, method = c("auto",
+    "shell", "radix"), na_values.last = NA) {
+    
+    if (!is_mixed(x)) {
+        cat("\n")
+        stop("`x` has to be a vector of class `mixed_labelled`.\n\n", call. = FALSE)
+    }
+
     method <- match.arg(method)
     
-    ix <- seq_along(x)
+    x_indexes <- seq_along(x)
 
     na_index <- attr(x, "na_index")
     declared <- logical(length(x))
     declared[na_index] <- TRUE
-    truena <- ix[is.na(x) & !declared]
-    # return(truena)    
-    ideclared <- c()
+    truena <- x_indexes[is.na(x) & !declared]
+    
+    declared_indexes <- c()
 
     if (any(declared)) {
-        x <- unclass(unmix(x))
-        # return(na_index)
-        # return(ix[na_index])
-        ideclared <- unname(na_index[order(names(na_index), decreasing = decreasing, method = method)])
-        # return(ideclared)
+        x <- unmix(x)
+        declared_indexes <- unname(na_index[order(names(na_index), decreasing = decreasing, method = method)])
     }
 
-    attributes(x) <- NULL # just in case
-    ix <- ix[!(is.na(x) | declared)]
+    attributes(x) <- NULL
+    x_indexes <- x_indexes[!(is.na(x) | declared)]
     x <- x[!(is.na(x) | declared)]
 
     res <- c()
@@ -351,14 +354,13 @@
     }
 
     if (isFALSE(na_values.last)) {
-        res <- c(res, ideclared)
+        res <- c(res, declared_indexes)
     }
 
-    res <- c(res, ix[order(unclass(x), decreasing = decreasing, method = method)])
-    # return(ideclared)
+    res <- c(res, x_indexes[order(unclass(x), decreasing = decreasing, method = method)])
     
     if (isTRUE(na_values.last)) {
-        res <- c(res, ideclared)
+        res <- c(res, declared_indexes)
     }
     
     if (isTRUE(na.last)) {
@@ -371,7 +373,7 @@
 
 
 `==.mixed_labelled` <- function(e1, e2) {
-    return(unclass(unmix(e1)) == unclass(unmix(e2)))
+    return(admisc::aeqb(unclass(unmix(e1)), unclass(unmix(e2))))
 }
 
 `!=.mixed_labelled` <- function(e1, e2) {
@@ -379,7 +381,7 @@
 }
 
 `<=.mixed_labelled` <- function(e1, e2) {
-    return(unclass(unmix(e1)) <= unclass(unmix(e2)))
+    return(admisc::alteb(unclass(unmix(e1)), unclass(unmix(e2))))
 }
 
 `<.mixed_labelled` <- function(e1, e2) {
@@ -387,7 +389,7 @@
 }
 
 `>=.mixed_labelled` <- function(e1, e2) {
-    return(unclass(unmix(e1)) >= unclass(unmix(e2)))
+    return(admisc::agteb(unclass(unmix(e1)), unclass(unmix(e2))))
 }
 
 `>.mixed_labelled` <- function(e1, e2) {

@@ -7,11 +7,10 @@ export(
     is_mixed,
     format_mixed,
     mixed_labelled,
-    unmix
+    unmix,
 
-    # order_labelled,
-    # sort_labelled,
-    # names_values,
+    order_mixed
+    # sort_mixed
     # to_labels,
     # is_tagged_string
 )
@@ -25,6 +24,8 @@ S3method(unmix, default)
 S3method(unmix, data.frame)
 
 S3method(print, mixed_labelled)
+S3method("[", mixed_labelled)
+S3method("[<-", mixed_labelled)
 
 
 # S3method(as_factor, mixed_labelled)
