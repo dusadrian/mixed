@@ -5,7 +5,8 @@
         env <- as.environment("package:base")
         do.call("unlockBinding", list(sym = "print.data.frame", env = env))
         
-        env$`print.data.frame` <- function (x, ..., digits = NULL, quote = FALSE, right = TRUE, row.names = TRUE, max = NULL) {
+        env$`print.data.frame` <- function (x, ..., digits = NULL, quote = FALSE, 
+            right = TRUE, row.names = TRUE, max = NULL) {
             n <- length(row.names(x))
             if (length(x) == 0L) {
                 do.call("cat", list(
@@ -112,7 +113,7 @@
             }
 
             if (any_mixed) {
-                return(c_mixed_labelled(dots))
+                return(c_mixed(dots))
             }
             else {
                 do.call(.Primitive("c"), c(dots, list(recursive = recursive, use.names = use.names)))
@@ -188,9 +189,7 @@
         
             ans[ok[ans]]
         }
-        
-    }
-    
 
+    }
 
 }
