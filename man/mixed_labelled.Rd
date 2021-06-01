@@ -21,7 +21,7 @@ is_mixed(x)
 
 as_mixed(x, ...)
 
-unmix(x)
+unmix(x, haven = FALSE)
 }
 
 \arguments{
@@ -38,6 +38,8 @@ of the range. Use \code{-Inf} and \code{Inf} if you want the range to be
 open ended.}
 
 \item{label}{A short, human-readable description of the vector.}
+
+\item{haven}{Logical, coerce the unmixed object to class "haven_labelled".}
 
 \item{...}{Other arguments used by various other methods.}
 }
@@ -84,5 +86,8 @@ x == -1
 
 # when newly added values are already declared as missing, they are automatically coerced
 c(x, 2, -1)
+
+# switch NAs with their original values
+unmix(x)
 
 }

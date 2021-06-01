@@ -100,17 +100,17 @@
 }
 
 # to be added in the namespace
-`unmix` <- function(x) {
+`unmix` <- function(x, haven = FALSE) {
     UseMethod("unmix")
 }
 
 # to be added in the namespace
-`unmix.default` <- function(x) {
+`unmix.default` <- function(x, haven = FALSE) {
     return(x)
 }
 
 # to be added in the namespace
-`unmix.mixed_labelled` <- function(x) {
+`unmix.mixed_labelled` <- function(x, haven = FALSE) {
     na_index <- attr(x, "na_index")
     attrx <- attributes(x)
     
@@ -126,14 +126,18 @@
     attrx$na_range <- NULL
     attrx$na_index <- NULL
 
+    if (haven) {
+        attrx$class <- c("haven_labelled", "vctrs_vctr", setdiff(attrx$class, "mixed_labelled"))
+    }
+
     attributes(x) <- attrx
     return(x)
 }
 
 # to be added in the namespace
-`unmix.data.frame` <- function(x) {
+`unmix.data.frame` <- function(x, haven = FALSE) {
     mixed <- vapply(x, is_mixed, logical(1))
-    x[mixed] <- lapply(x[mixed], unmix)
+    x[mixed] <- lapply(x[mixed], unmix, haven = haven)
     
     return(x)
 }
@@ -210,48 +214,8 @@
     return(x)
 }
 
-
-`missingValues` <- function(x) {
-    
-    mv <- rep(NA, length(x))
-    
-    if (is_mixed(x)) {
-        misvals <- attr(x, "na_index")
-        mv[as.numeric(names(misvals))] <- misvals
-    }
-
-    return(mv)
-}
-
-
-`missingValues<-` <- function(x, value) {
-    
-    class(x) <- setdiff(class(x), "mixed_labelled")
-    other_classes <- setdiff(class(x), c("integer", "double", "character", "numeric", "complex", "haven_labelled", "haven_labelled_spss", "vctrs_vctr"))
-    pn <- admisc::possibleNumeric(x)
-    x[!is.na(value)] <- NA
-    
-    
-    na_index <- which(!is.na(value))
-    value <- value[!is.na(value)]
-
-    if (pn || all(is.na(x))) {
-        x <- admisc::asNumeric(x)
-        class(x) <- ifelse(admisc::wholeNumeric(x), "integer", "double")
-    }
-    else {
-        class(x) <- "character"
-    }
-
-    names(na_index) <- value
-    
-    attr(x, "na_index") <- na_index
-    # print(attributes(x))
-    structure(x, class = c("mixed_labelled", other_classes, class(x)))
-}
-
 `likely_mode` <- function(x) {
-    if (admisc::possibleNumeric(x)) {
+    if (admisc::possibleNumeric(x) || all(is.na(x))) {
         x <- admisc::asNumeric(x)
         if (admisc::wholeNumeric(x)) {
             x <- as.integer(x)
@@ -276,6 +240,38 @@
     if (!is.null(type)) {
         return(paste0("<", type, ">"))
     }
+}
+
+
+`missingValues` <- function(x) {
+    
+    mv <- rep(NA, length(x))
+    
+    if (is_mixed(x)) {
+        misvals <- attr(x, "na_index")
+        mv[as.numeric(names(misvals))] <- misvals
+    }
+
+    return(mv)
+}
+
+
+`missingValues<-` <- function(x, value) {
+    
+    class(x) <- setdiff(class(x), "mixed_labelled")
+    other_classes <- setdiff(class(x), c("integer", "double", "character", "numeric", "complex", "haven_labelled", "haven_labelled_spss", "vctrs_vctr"))
+    
+    x <- likely_mode(x)
+
+    if (any(!is.na(value))) {
+        x[!is.na(value)] <- NA
+        na_index <- which(!is.na(value))
+        value <- value[!is.na(value)]
+        names(na_index) <- value
+        attr(x, "na_index") <- na_index
+    }
+    
+    structure(x, class = c("mixed_labelled", other_classes, class(x)))
 }
 
 
@@ -448,56 +444,35 @@
     x[!duplicated(x)]
 }
 
-`mean.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
+`median.mixed_labelled` <- function(x, na.rm = FALSE, ...) {
     na_index <- attr(x, "na_index")
     if (!is.null(na_index)) {
         x <- x[-na_index]
     }
-
-    mean(unclass(x), ...)
+    x <- unclass(x)
+    NextMethod()
 }
 
-`median.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
+`mean.mixed_labelled` <- function(x, ...) {
     na_index <- attr(x, "na_index")
     if (!is.null(na_index)) {
         x <- x[-na_index]
     }
-
-    median(unclass(x), ...)
+    x <- unclass(x)
+    NextMethod()
 }
 
-`sd.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
-    na_index <- attr(x, "na_index")
+`summary.mixed_labelled` <- function(object, ...) {
+    na_index <- attr(object, "na_index")
     if (!is.null(na_index)) {
-        x <- x[-na_index]
+        object[na_index] <- NA
     }
-
-    sd(unclass(x), ...)
+    object <- unclass(object)
+    NextMethod()
 }
 
-`var.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
-    na_index <- attr(x, "na_index")
-    if (!is.null(na_index)) {
-        x <- x[-na_index]
-    }
-
-    sd(unclass(x), ...)
-}
-
-`summary.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
-    na_index <- attr(x, "na_index")
-    if (!is.null(na_index)) {
-        x[na_index] <- NA
-    }
-
-    summary(unclass(x), ...)
-}
-
-`fivenum.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
-    na_index <- attr(x, "na_index")
-    if (!is.null(na_index)) {
-        x[na_index] <- NA
-    }
-
-    summary(unclass(x), ...)
+`cbind.mixed_labelled` <- function(..., deparse.level = 1) {
+    cargs <- lapply(list(...), unmix)
+    cargs$deparse.level <- deparse.level
+    do.call("cbind", cargs)
 }
