@@ -8,6 +8,8 @@
 \alias{sort_mixed}
 \alias{format_mixed}
 \alias{is_tagged_string}
+\alias{names_values}
+\alias{to_labels}
 
 \title{Internal functions}
 
