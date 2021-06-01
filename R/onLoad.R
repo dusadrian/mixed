@@ -1,4 +1,17 @@
 `.onLoad` <- function(...) {
+    load_library <- function(pkg) {
+        if (pkg %in% loadedNamespaces()) {
+            loc <- dirname(getNamespaceInfo(pkg, "path"))
+            do.call(
+                "library",
+                list(pkg, lib.loc = loc, character.only = TRUE, warn.conflicts = FALSE)
+            )
+        }
+    }
+
+    suppressPackageStartupMessages(
+        load_library("stats")
+    )
 
     if (admisc::unlockEnvironment(asNamespace("base"))) {
 
@@ -190,6 +203,93 @@
             ans[ok[ans]]
         }
 
+    }
+
+    if (admisc::unlockEnvironment(asNamespace("stats"))) {
+
+        env <- as.environment("package:stats")
+
+        do.call("unlockBinding", list(sym = "sd", env = env))
+        
+        env$sd <- function(x, na.rm = FALSE) {
+            if (is_mixed(x)) {
+                na_index <- attr(x, "na_index")
+                if (!is.null(na_index)) {
+                    x <- x[-na_index]
+                }
+                class(x) <- setdiff(class(x), "mixed_labelled")
+            }
+
+            sqrt(var(if (is.vector(x) || is.factor(x)) x else as.double(x), na.rm = na.rm))
+        }
+
+        do.call("unlockBinding", list(sym = "var", env = env))
+        
+        env$var <- function(x, y = NULL, na.rm = FALSE, use) {
+            if (is_mixed(x)) {
+                na_index <- attr(x, "na_index")
+                if (!is.null(na_index)) {
+                    x <- x[-na_index]
+                }
+                class(x) <- setdiff(class(x), "mixed_labelled")
+            }
+
+            if (missing(use)) {
+                use <- ifelse(na.rm, "na.or.complete", "everything")
+            }
+
+            na.method <- pmatch(use, c("all.obs", "complete.obs", "pairwise.complete.obs", 
+                "everything", "na.or.complete"))
+
+            if (is.na(na.method)) {
+                stop("invalid 'use' argument")
+            }
+
+            if (is.data.frame(x)) {
+                x <- as.matrix(x)
+            }
+            else {
+                stopifnot(is.atomic(x))
+            }
+
+            if (is.data.frame(y)) {
+                y <- as.matrix(y)
+            }
+            else {
+                stopifnot(is.atomic(y))
+            }
+            
+            eval(parse(text = '.Call(stats:::C_cov, x, y, na.method, FALSE)'))
+            # .Call(C_cov, x, y, na.method, FALSE)
+        }
+
+        do.call("unlockBinding", list(sym = "fivenum", env = env))
+        
+        env$fivenum <- function(x, na.rm = FALSE) {
+            if (is_mixed(x)) {
+                na_index <- attr(x, "na_index")
+                if (!is.null(na_index)) {
+                    x <- x[-na_index]
+                }
+                class(x) <- setdiff(class(x), "mixed_labelled")
+            }
+
+            xna <- is.na(x)
+            if (any(xna)) {
+                if (na.rm) 
+                    x <- x[!xna]
+                else return(rep.int(NA, 5))
+            }
+            x <- sort(x)
+            n <- length(x)
+            if (n == 0) 
+                rep.int(NA, 5)
+            else {
+                n4 <- floor((n + 3)/2)/2
+                d <- c(1, n4, (n + 1)/2, n + 1 - n4, n)
+                0.5 * (x[floor(d)] + x[ceiling(d)])
+            }
+        }
     }
 
 }

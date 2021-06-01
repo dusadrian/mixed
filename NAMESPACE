@@ -1,5 +1,5 @@
 
-importFrom("stats", "median", "na.omit")
+importFrom("stats", "na.omit", "median")
 importFrom("admisc", "possibleNumeric", "wholeNumeric", "asNumeric", "unlockEnvironment")
 
 export(
@@ -20,17 +20,16 @@ export(
     "value_labels<-",
     variable_label,
     "variable_label<-"
+
     # sort_mixed
     # to_labels,
     # is_tagged_string
 )
 
+S3method(cbind, mixed_labelled)
 S3method(mean, mixed_labelled)
 S3method(median, mixed_labelled)
-S3method(sd, mixed_labelled)
-S3method(var, mixed_labelled)
 S3method(summary, mixed_labelled)
-S3method(fivenum, mixed_labelled)
 
 S3method(as_mixed, default)
 S3method(as_mixed, haven_labelled_spss)
