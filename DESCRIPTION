@@ -9,6 +9,6 @@ Authors@R: person(given = "Adrian", family = "Dusa",
 Depends: R (>= 3.5.0)
 Imports: admisc
 License: GPL (>= 3)
-Description: A package that extends the "haven_labelled" class introduced in package 'haven',
-    to deal with mixed labelled objects where existing values defined as missing are treated
-    as both real and missing values, at the same time.
+Description: A package that offers an alternative to the "haven_labelled" class introduced
+    in package 'haven', to deal with mixed labelled objects with existing values declared
+    as missing.
