@@ -130,3 +130,81 @@
 
     return(res)
 }
+
+
+`names_values` <- function(x) {
+
+    if (!inherits(x, "mixed_labelled")) {
+        cat("\n")
+        stop("The input should be a mixed_labelled vector.\n\n", call. = FALSE)
+    }
+
+    attrx <- attributes(x)
+    x <- unmix(x)
+    attributes(x) <- NULL
+    
+    labels <- attrx$labels
+
+    x <- x[!duplicated(x)]
+    xmis <- logical(length(x))
+
+    na_values <- attrx$na_values
+    na_range <- attrx$na_range
+
+
+    if (!is.null(na_values)) {
+        xmis <- xmis | is.element(x, na_values)
+    }
+    
+    if (!is.null(na_range)) {
+        xmis <- xmis | (x >= na_range[1] & x <= na_range[2])
+    }
+
+    
+    xnotmis <- sort(x[!xmis])
+    xmis <- sort(x[xmis])
+    
+    if (length(xmis) > 0) {
+        names(xmis) <- xmis
+        for (i in seq(length(xmis))) {
+            if (any(isel <- labels == xmis[i])) {
+                names(xmis)[i] <- names(labels)[isel]
+            }
+        }
+    }
+
+
+    names(xnotmis) <- xnotmis
+    if (length(xnotmis) > 0) {
+        for (i in seq(length(xnotmis))) {
+            if (any(isel <- labels == xnotmis[i])) {
+                names(xnotmis)[i] <- names(labels)[isel]
+            }
+        }
+    }
+
+    result <- c(xnotmis, xmis)
+    attr(result, 'missing') <- xmis
+
+    return(result)
+}
+
+
+
+`to_labels` <- function(x) {
+
+    if (!inherits(x, "mixed_labelled")) {
+        cat("\n")
+        stop("The input should be a mixed_labelled vector.\n\n", call. = FALSE)
+    }
+
+    labels <- names_values(x)
+    x <- unmix(x)
+
+    attributes(x) <- NULL
+    result <- x
+    
+    result[is.element(result, labels)] <- names(labels)[match(result[is.element(result, labels)], labels)]
+    
+    return(result)
+}
