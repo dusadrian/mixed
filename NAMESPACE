@@ -14,6 +14,8 @@ export(
     "missing_values<-",
     missing_range,
     "missing_range<-",
+    names_values,
+    to_labels,
     value_labels,
     "value_labels<-",
     variable_label,
@@ -23,14 +25,22 @@ export(
     # is_tagged_string
 )
 
+S3method(mean, mixed_labelled)
+S3method(median, mixed_labelled)
+S3method(sd, mixed_labelled)
+S3method(var, mixed_labelled)
+S3method(summary, mixed_labelled)
+S3method(fivenum, mixed_labelled)
+
 S3method(as_mixed, default)
 S3method(as_mixed, haven_labelled_spss)
 S3method(as_mixed, data.frame)
 
-
 S3method(unmix, default)
 S3method(unmix, data.frame)
 S3method(unmix, mixed_labelled)
+S3method(duplicated, mixed_labelled)
+S3method(unique, mixed_labelled)
 
 S3method(print, mixed_labelled)
 S3method("[", mixed_labelled)
