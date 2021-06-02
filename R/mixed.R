@@ -122,12 +122,14 @@
         x[na_index] <- likely_mode(names(na_index))
     }
     
-    attrx$na_values <- NULL
-    attrx$na_range <- NULL
     attrx$na_index <- NULL
 
     if (haven) {
         attrx$class <- c("haven_labelled_spss", "haven_labelled", "vctrs_vctr", setdiff(attrx$class, "mixed_labelled"))
+    }
+    else {
+        attrx$na_values <- NULL
+        attrx$na_range <- NULL
     }
 
     attributes(x) <- attrx
@@ -277,32 +279,20 @@
 
 `[.mixed_labelled` <- function(x, i, ...) {
     attrx <- attributes(x)
-    missings <- rep(NA, length(x))
-    na_index <- attr(x, "na_index")
-
-    if (!is.null(na_index)) {
-        missings[na_index] <- likely_mode(names(na_index))
-    }
+    x <- unmix(x)
     x <- NextMethod()
-    missings <- missings[i]
-
-    missingValues(x) <- missings
-    
-    attrx$na_index <- attr(x, "na_index")
-    attributes(x) <- attrx
-    return(x)
+    # attrx$label, if not existing, takes from attrx$labels
+    # attrx[["label"]] is something like attr(x, "label", exact = TRUE)
+    mixed_labelled(x, attrx[["labels"]], attrx$na_values, attrx$na_range, attrx[["label"]])
 }
 
 
 `[<-.mixed_labelled` <- function(x, i, value) {
-    missings <- rep(NA, length(x))
-    class(x) <- setdiff(class(x), "mixed_labelled")
-    x[i] <- value
-    missings[i] <- missingValues(value)
-
-    missingValues(x) <- missings
-    # print(attributes(x))
-    x
+    attrx <- attributes(x)
+    value <- unmix(value)
+    x <- unmix(x)
+    x <- NextMethod()
+    mixed_labelled(x, attrx[["labels"]], attrx$na_values, attrx$na_range, attrx[["label"]])
 }
 
 
@@ -446,12 +436,6 @@
 
 `unique.mixed_labelled` <- function(x, incomparables = FALSE, ...) {
     x[!duplicated(x)]
-}
-
-`cbind.mixed_labelled` <- function(..., deparse.level = 1) {
-    cargs <- lapply(list(...), unmix)
-    cargs$deparse.level <- deparse.level
-    do.call("cbind", cargs)
 }
 
 `head.mixed_labelled` <- function(x, n = 6L, ...) {
