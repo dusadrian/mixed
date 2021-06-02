@@ -143,7 +143,8 @@
     x <- unmix(x)
     attributes(x) <- NULL
     
-    labels <- attrx$labels
+    # attrx[["labels"]] is the equivalent of attr(x, "labels", exact = TRUE)
+    labels <- attrx[["labels"]]
 
     x <- x[!duplicated(x)]
     xmis <- logical(length(x))
