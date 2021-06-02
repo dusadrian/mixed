@@ -68,7 +68,7 @@
 `as_mixed.haven_labelled_spss` <- function(x, ...) {
     # TO DO: add functionality for tagged NAs in class haven_labelled
     
-    misvals <- all_missing_values(x)
+    misvals <- all_missing_values(unclass(x))
 
     na_values <- attr(x, "na_values")
     na_range <- attr(x, "na_range")
@@ -127,7 +127,7 @@
     attrx$na_index <- NULL
 
     if (haven) {
-        attrx$class <- c("haven_labelled", "vctrs_vctr", setdiff(attrx$class, "mixed_labelled"))
+        attrx$class <- c("haven_labelled_spss", "haven_labelled", "vctrs_vctr", setdiff(attrx$class, "mixed_labelled"))
     }
 
     attributes(x) <- attrx
@@ -280,11 +280,15 @@
     missings <- rep(NA, length(x))
     na_index <- attr(x, "na_index")
 
-    missings[na_index] <- likely_mode(names(na_index))
-    
+    if (!is.null(na_index)) {
+        missings[na_index] <- likely_mode(names(na_index))
+    }
     x <- NextMethod()
     missings <- missings[i]
+
     missingValues(x) <- missings
+    
+    attrx$na_index <- attr(x, "na_index")
     attributes(x) <- attrx
     return(x)
 }
@@ -444,7 +448,57 @@
     x[!duplicated(x)]
 }
 
-`median.mixed_labelled` <- function(x, na.rm = FALSE, ...) {
+`cbind.mixed_labelled` <- function(..., deparse.level = 1) {
+    cargs <- lapply(list(...), unmix)
+    cargs$deparse.level <- deparse.level
+    do.call("cbind", cargs)
+}
+
+`head.mixed_labelled` <- function(x, n = 6L, ...) {
+    x[seq(n)]
+}
+
+`tail.mixed_labelled` <- function(x, n = 6L, ...) {
+    lx <- length(x)
+    x[seq(lx - n + 1, lx)]
+}
+
+`na.omit.mixed_labelled` <- function (object, ...)  {
+    attrx <- attributes(object)
+    attrx$na_index <- NULL
+    object <- unclass(object)
+    object <- NextMethod()
+    attrx$na.action <- attr(object, "na.action")
+    nms <- attrx$names
+    if (!is.null(nms) && !is.null(attrx$na.action)) {
+        nms <- nms[-attr(object, "na.action")]
+        attrx$names <- nms
+    }
+    attributes(object) <- attrx
+    return(object)
+}
+
+`na.fail.mixed_labelled` <- function (object, ...)  {
+    object <- unclass(object)
+    NextMethod()
+}
+
+`na.exclude.mixed_labelled` <- function (object, ...)  {
+    attrx <- attributes(object)
+    attrx$na_index <- NULL
+    object <- unclass(object)
+    object <- NextMethod()
+    attrx$na.action <- attr(object, "na.action")
+    nms <- attrx$names
+    if (!is.null(nms) && !is.null(attrx$na.action)) {
+        nms <- nms[-attr(object, "na.action")]
+        attrx$names <- nms
+    }
+    attributes(object) <- attrx
+    return(object)
+}
+
+`mean.mixed_labelled` <- function(x, ...) {
     na_index <- attr(x, "na_index")
     if (!is.null(na_index)) {
         x <- x[-na_index]
@@ -453,7 +507,7 @@
     NextMethod()
 }
 
-`mean.mixed_labelled` <- function(x, ...) {
+`median.mixed_labelled` <- function(x, na.rm = FALSE, ...) {
     na_index <- attr(x, "na_index")
     if (!is.null(na_index)) {
         x <- x[-na_index]
@@ -469,10 +523,4 @@
     }
     object <- unclass(object)
     NextMethod()
-}
-
-`cbind.mixed_labelled` <- function(..., deparse.level = 1) {
-    cargs <- lapply(list(...), unmix)
-    cargs$deparse.level <- deparse.level
-    do.call("cbind", cargs)
 }

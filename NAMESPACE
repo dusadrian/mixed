@@ -1,5 +1,6 @@
 
-importFrom("stats", "na.omit", "median")
+importFrom("stats", "na.omit", "na.fail", "na.exclude", "median")
+importFrom("utils", "head", "tail")
 importFrom("admisc", "possibleNumeric", "wholeNumeric", "asNumeric", "unlockEnvironment")
 
 export(
@@ -27,6 +28,11 @@ export(
 )
 
 S3method(cbind, mixed_labelled)
+S3method(head, mixed_labelled)
+S3method(tail, mixed_labelled)
+S3method(na.omit, mixed_labelled)
+S3method(na.fail, mixed_labelled)
+S3method(na.exclude, mixed_labelled)
 S3method(mean, mixed_labelled)
 S3method(median, mixed_labelled)
 S3method(summary, mixed_labelled)
