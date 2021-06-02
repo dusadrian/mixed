@@ -7,21 +7,13 @@
 \docType{package}
 
 \title{
-Mixed labelled data
+Declare Missing Values
 }
 
 \description{
-A package that extend the \code{haven_labelled} class introduced in package
-\pkg{haven}, to deal with mixed labelled objects where existing values that
-are defined as missing are treated as both real and missing values, at the
-same time.
-
-It also extends the functions related to tagged NA values, also accepting
-numbers in addition to single letters.
-
-This package strives for as much compatibility as possible with packages
-\pkg{haven} and \pkg{labelled}, adding functionality on top of these two
-packages.
+A package that offers an alternative to the \code{haven_labelled} class
+introduced in package \bold{haven}, to deal with mixed labelled objects
+with existing values declared as missing.
 }
 
 \details{
@@ -29,7 +21,7 @@ packages.
     Package: \tab mixed\cr
     Type: \tab Package\cr
     Version: \tab 0.5\cr
-    Date: \tab 2021-05-13\cr
+    Date: \tab 2021-06-01\cr
     License: \tab GPL-v3\cr
     }
 }

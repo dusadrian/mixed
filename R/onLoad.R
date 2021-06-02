@@ -18,6 +18,8 @@
         env <- as.environment("package:base")
         do.call("unlockBinding", list(sym = "print.data.frame", env = env))
         
+        # this function is unchanged, but it needs to be re-written to access
+        # the custom version of format.data.frame()
         env$`print.data.frame` <- function (x, ..., digits = NULL, quote = FALSE, 
             right = TRUE, row.names = TRUE, max = NULL) {
             n <- length(row.names(x))
@@ -65,21 +67,26 @@
 
         do.call("unlockBinding", list(sym = "format.data.frame", env = env))
 
-        env$`format.data.frame` <- function (x, ..., justify = "none") {
+        env$`format.data.frame` <- function (x, ..., justify = "none")
+        {
             nc <- length(x)
             if (!nc) 
                 return(x)
             nr <- .row_names_info(x, 2L)
             rval <- vector("list", nc)
             
+            # -----------------------------------------------------
+            # this function is also unchanged, except for this part:
             for (i in seq_len(nc)) {
-                if (is_mixed(x[[i]])) {
+                if (is_mixed(x[[i]]) && any(is.na(x[[i]]))) {
+                    # any(is.na()) is necessary to guard against na.omit(), for instance
                     rval[[i]] <- format_mixed(x[[i]])
                 }
                 else {
                     rval[[i]] <- format(x[[i]], ..., justify = justify)
                 }
             }
+            # -----------------------------------------------------
 
             lens <- vapply(rval, NROW, 1)
             
