@@ -5,29 +5,23 @@ importFrom("admisc", "possibleNumeric", "wholeNumeric", "asNumeric", "unlockEnvi
 
 export(
     as_mixed,
-    is_mixed,
     format_mixed,
+    is_mixed,
     mixed_labelled,
-    unmix,
-
-    order_mixed,
     missing_values,
     "missing_values<-",
     missing_range,
     "missing_range<-",
     names_values,
+    order_mixed,
     to_labels,
+    unmix,
     value_labels,
     "value_labels<-",
     variable_label,
     "variable_label<-"
-
-    # sort_mixed
-    # to_labels,
-    # is_tagged_string
 )
 
-S3method(cbind, mixed_labelled)
 S3method(head, mixed_labelled)
 S3method(tail, mixed_labelled)
 S3method(na.omit, mixed_labelled)
@@ -78,13 +72,6 @@ S3method(variable_label, mixed_labelled)
 S3method(variable_label, data.frame)
 S3method("variable_label<-", default)
 S3method("variable_label<-", mixed_labelled)
-
-
-# S3method(as_factor, mixed_labelled)
-# S3method(levels, mixed_labelled)
-# S3method(drop_unused_value_labels, mixed_labelled)
-# S3method(cbind, mixed_labelled)
-
 
 S3method("names<-", mixed_labelled)
 S3method("==", mixed_labelled)
