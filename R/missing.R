@@ -75,9 +75,7 @@
         stop("`value` should be a numeric vector of length 2.\n\n", call. = FALSE)
     }
 
-    if (value[1] > value[2]) {
-        value <- rev(value)
-    }
+    value <- sort(value)
 
     mixed_labelled(unmix(x),
         labels = attr(x, "labels", exact = TRUE),

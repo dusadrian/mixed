@@ -203,8 +203,8 @@
 
     misvals <- all_missing_values(x, na_values, na_range, labels)
 
-    if (!is.null(na_range) && na_range[1] > na_range[2]) {
-        na_range <- rev(na_range)
+    if (!is.null(na_range)) {
+        na_range <- sort(na_range)
     }
     
     missingValues(x)[is.element(x, misvals)] <- x[is.element(x, misvals)]
@@ -328,7 +328,7 @@
 
     na_range <- attr(x, "na_range")
     if (!is.null(na_range)) {
-        cat(paste0("Missing range:  [", paste(na_range, collapse = ", "), "]"))
+        cat(paste0("Missing range:  [", paste(na_range, collapse = ", "), "]\n"))
     }
 
     labels <- attr(x, "labels", exact = TRUE)

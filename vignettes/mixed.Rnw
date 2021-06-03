@@ -1,6 +1,6 @@
 \documentclass{article}
 \usepackage{pdfpages}
-%\VignetteIndexEntry{Why the package mixed}
+% \VignetteIndexEntry{Why the package mixed}
 \begin{document}
-\includepdf[pages=-, fitpaper=true]{mixed_package.pdf}
+\includepdf[pages=-, fitpaper=true]{why_the_package_mixed.pdf}
 \end{document}

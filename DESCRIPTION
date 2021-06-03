@@ -1,6 +1,6 @@
 Package: mixed
 Version: 0.5
-Date: 2021-06-01
+Date: 2021-06-03
 Title: Declare Missing Values
 Authors@R: person(given = "Adrian", family = "Dusa",
                   role = c("aut", "cre", "cph"),
@@ -11,6 +11,5 @@ Imports: admisc
 License: GPL (>= 3)
 URL: https://github.com/dusadrian/mixed
 BugReports: https://github.com/dusadrian/mixed/issues
-Description: A package that offers an alternative to the "haven_labelled" class introduced
-    in package 'haven', to deal with mixed labelled objects with existing values declared
-    as missing.
+Description: A set of functions that offer an alternative to package "haven", to deal with
+    mixed labelled objects with existing values declared as missing.
