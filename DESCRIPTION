@@ -1,5 +1,5 @@
 Package: mixed
-Version: 0.5
+Version: 0.5-5
 Date: 2021-06-03
 Title: Declare Missing Values
 Authors@R: person(given = "Adrian", family = "Dusa",

@@ -212,6 +212,7 @@
     attr(x, "na_values") <- na_values
     attr(x, "na_range") <- na_range
     attr(x, "labels") <- labels
+    attr(x, "label") <- label
 
     return(x)
 }

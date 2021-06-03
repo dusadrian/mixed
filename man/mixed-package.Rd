@@ -19,7 +19,7 @@ mixed labelled objects with existing values declared as missing.
     \tabular{ll}{
     Package: \tab mixed\cr
     Type: \tab Package\cr
-    Version: \tab 0.5\cr
+    Version: \tab 0.5-5\cr
     Date: \tab 2021-06-03\cr
     License: \tab GPL-v3\cr
     }
