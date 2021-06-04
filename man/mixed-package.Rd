@@ -12,7 +12,7 @@ Declare Missing Values
 
 \description{
 A set of functions that offer an alternative to package "haven", to deal with
-mixed labelled objects with existing values declared as missing.
+labelled objects with existing values declared as missing.
 }
 
 \details{

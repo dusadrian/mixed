@@ -30,6 +30,12 @@ missing_range(x) <- value
 extents of the range of missing values (for \code{missing_range}).}
 }
 
+\value{
+\code{missing_values()} will return a vector of one or more values.
+
+\code{missing_range()} will return a numeric vector of length 2.
+}
+
 
 \examples{
 x <- mixed_labelled(c(-2, 1:5, -1),

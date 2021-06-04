@@ -70,6 +70,15 @@ drops all attributes related to missing values: \code{na_values}, \code{na_range
 \code{na_index}.
 }
 
+\value{
+\code{mixed_labelled()} and \code{as_mixed()} will return a labelled vector.
+
+\code{is_mixed()} will return a logical scalar.
+
+\code{unmix()} will return a regular vector if argument \code{haven} is FALSE, or a
+\bold{haven} type of labelled vector when set to TRUE.
+}
+
 \examples{
 
 x <- mixed_labelled(c(1:5, -1),

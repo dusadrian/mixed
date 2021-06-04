@@ -32,6 +32,12 @@ variable_label(x) <- value
 extents of the range of missing values (for \code{variable_label}).}
 }
 
+\value{
+\code{value_labels()} will return a named vector.
+
+\code{variable_label()} will return a single character string.
+}
+
 
 \examples{
 x <- mixed_labelled(c(-2, 1:5, -1),
